@@ -3,244 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI DC 美學導師系統 V11</title>
+    <title>AI DC 智慧形象大師 V18 - 視覺圖譜版</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --p: #d8b4fe; --bg: #fdfcfd; --card: #ffffff; --text: #3d3d3d; --accent: #f5efff; }
-        body { font-family: 'PingFang TC', 'Heiti TC', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
-        .page { display: none; padding: 20px; max-width: 600px; margin: auto; animation: fadeIn 0.4s ease; }
+        :root { --p: #d8b4fe; --txt: #333; --bg: #faf9fb; --card: #ffffff; --acc: #f3e8ff; --warm: #fb923c; --cool: #60a5fa; }
+        body { font-family: 'PingFang TC', sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; }
+        .page { display: none; padding: 20px; max-width: 550px; margin: auto; animation: fadeIn 0.4s; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 啟動與相機頁面 */
-        .title-group { text-align: center; margin: 40px 0; }
-        .title-group h1 { letter-spacing: 5px; font-weight: 300; margin: 0; }
-        #camera_view { width: 100%; aspect-ratio: 3/4; background: #000; border-radius: 40px; overflow: hidden; position: relative; border: 8px solid white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .guide-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 70%; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none; }
-
-        /* 性別切換 */
-        .gender-selector { display: flex; justify-content: center; gap: 15px; margin: 30px 0; }
-        .g-btn { padding: 12px 30px; border-radius: 30px; border: 2px solid var(--p); background: white; color: var(--p); font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .g-btn.active { background: var(--p); color: white; }
-
-        /* 結果展示區 */
-        .nav-tabs { display: flex; overflow-x: auto; gap: 10px; padding: 15px 0; scrollbar-width: none; }
-        .tab { flex: 0 0 auto; padding: 10px 22px; border-radius: 20px; background: white; border: 1px solid #eee; cursor: pointer; font-size: 0.9em; }
+        /* --- 高級感 UI 元件 --- */
+        .glass-card { background: var(--card); border-radius: 30px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f0f0f0; }
+        .main-btn { display: block; width: 85%; margin: 20px auto; padding: 18px; background: var(--p); color: white; border-radius: 50px; border: none; font-weight: bold; font-size: 1.1em; cursor: pointer; box-shadow: 0 10px 25px rgba(216, 180, 254, 0.4); }
+        
+        /* 導航分頁 */
+        .nav-scroll { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; scrollbar-width: none; }
+        .tab { flex: 0 0 auto; padding: 10px 22px; border-radius: 20px; background: white; border: 1px solid #eee; cursor: pointer; font-size: 0.85em; transition: 0.3s; }
         .tab.active { background: var(--p); color: white; border-color: var(--p); }
 
-        .card { background: white; border-radius: 25px; padding: 25px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.02); }
-        .card h3 { margin: 0 0 15px 0; font-size: 1.1em; display: flex; align-items: center; gap: 10px; color: var(--p); }
+        /* --- 視覺化圖譜元件 --- */
+        .visual-box { width: 100%; background: #fff; border-radius: 20px; padding: 15px; margin: 15px 0; border: 1px solid #f5f5f5; box-sizing: border-box; }
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+        .swatch { aspect-ratio: 1; border-radius: 12px; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
-        .m-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .m-item { background: var(--accent); padding: 15px; border-radius: 18px; text-align: center; }
-        .m-val { font-weight: bold; display: block; margin-top: 5px; font-size: 1.1em; }
+        /* 五官比例尺 */
+        .metric-bar { width: 100%; height: 8px; background: #eee; border-radius: 10px; margin: 12px 0; position: relative; }
+        .pointer { position: absolute; top: -4px; width: 16px; height: 16px; background: var(--p); border: 3px solid white; border-radius: 50%; transform: translateX(-50%); transition: 0.6s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
 
-        /* 教學模組樣式 */
-        .style-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
-        .s-btn { flex: 0 0 auto; padding: 8px 18px; border-radius: 15px; background: white; border: 1px solid #eee; cursor: pointer; font-size: 0.85em; }
-        .s-btn.active { border-color: var(--p); background: var(--accent); color: var(--p); font-weight: bold; }
-        
-        .step-img { width: 100%; aspect-ratio: 1; background: #f0f0f0; border-radius: 20px; margin: 15px 0; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8em; overflow: hidden; }
-        .step-text { font-size: 0.9em; line-height: 1.6; color: #666; margin-bottom: 20px; border-left: 3px solid var(--p); padding-left: 15px; }
+        /* 相機預覽 */
+        #cam_container { width: 90%; margin: auto; border-radius: 40px; overflow: hidden; border: 8px solid white; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.05); }
+        video { width: 100%; transform: scaleX(-1); display: block; }
 
-        .btn-action { display: block; width: 85%; margin: 30px auto; padding: 18px; background: var(--p); color: white; border-radius: 40px; text-align: center; font-weight: bold; border: none; font-size: 1.1em; cursor: pointer; box-shadow: 0 10px 20px rgba(216, 180, 254, 0.4); }
+        .step-info { border-left: 3px solid var(--acc); padding-left: 15px; margin: 15px 0; font-size: 0.9em; line-height: 1.7; }
     </style>
 </head>
 <body>
 
-<div id="page_camera" class="page active">
-    <div class="title-group">
-        <p style="font-size: 0.8em; opacity: 0.5;">AI DC 美學系統</p>
-        <h1>AESTHETIC AI</h1>
-        <p>解碼您的專屬面容密碼</p>
+<div id="p_start" class="page active">
+    <div style="text-align: center; margin-top: 40px;">
+        <h1 style="letter-spacing: 6px; font-weight: 300;">AESTHETIC AI</h1>
+        <p style="opacity: 0.5; font-size: 0.9em;">解碼您的專屬色彩與美學思路</p>
     </div>
     
-    <div id="camera_view">
-        <video id="video" autoplay playsinline></video>
-        <div class="guide-box"></div>
+    <div id="cam_container">
+        <video id="v" autoplay playsinline></video>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 75%; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%;"></div>
     </div>
 
-    <div class="gender-selector">
-        <button class="g-btn active" id="f_btn" onclick="setGender('female')">WOMAN</button>
-        <button class="g-btn" id="m_btn" onclick="setGender('male')">MAN</button>
+    <div style="display:flex; justify-content:center; gap:15px; margin: 30px 0;">
+        <button class="tab active" id="g_f" onclick="setG('female')">浪漫女性</button>
+        <button class="tab" id="g_m" onclick="setG('male')">陽剛男性</button>
     </div>
 
-    <button class="btn-action" onclick="captureAndAnalyze()">開始深度診斷</button>
+    <button class="main-btn" onclick="runAnalysis()">開啟深度診斷報告</button>
 </div>
 
-<div id="page_result" class="page">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h2 id="res_face_title" style="margin-bottom: 5px;">圓型臉 | 敏感肌</h2>
-        <div id="res_summary" style="font-size: 0.85em; opacity: 0.6;">比例均衡 · 氣質柔和</div>
+<div id="p_res" class="page">
+    <div style="text-align: center; margin-bottom: 25px;">
+        <h2 id="res_face">楕圓面 | 暖色調</h2>
+        <div style="font-size: 0.8em; opacity: 0.4;">分析得分：89 | 已同步至您的美學手冊</div>
     </div>
 
-    <div class="nav-tabs">
-        <div class="tab active" onclick="switchMod('mod_analysis')">💎 數據總覽</div>
-        <div class="tab" onclick="switchMod('mod_makeup')">💄 彩妝教學</div>
-        <div class="tab" onclick="switchMod('mod_hair')">💇 髮型穿搭</div>
-        <div class="tab" onclick="switchMod('mod_skincare')">🧴 專業保養</div>
+    <div class="nav-scroll">
+        <div class="tab active" onclick="showM('m_color')">🎨 本命色彩</div>
+        <div class="tab" onclick="showM('m_data')">📐 五官比例</div>
+        <div class="tab" onclick="showM('m_makeup')">💄 教學圖譜</div>
     </div>
 
-    <div id="mod_analysis" class="module">
-        <div class="card">
-            <h3><i class="fa-solid fa-chart-pie"></i> 五官微觀分析</h3>
-            <div class="m-grid">
-                <div class="m-item"><i class="fa-solid fa-eye"></i><span class="m-val" id="val_eye">圓眼 | 寬距</span></div>
-                <div class="m-item"><i class="fa-solid fa-nose-brush"></i><span class="m-val" id="val_nose">標準 | 中等</span></div>
-                <div class="m-item"><i class="fa-solid fa-lips"></i><span class="m-val" id="val_lip">厚唇 | 縮人中</span></div>
-                <div class="m-item"><i class="fa-solid fa-ruler-vertical"></i><span class="m-val" id="val_ratio">1:1.1:1</span></div>
+    <div id="m_color" class="module">
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-palette"></i> 本命色盤：秋季暖暖</h3>
+            <p style="font-size: 0.85em;">AI 偵測您的底色偏暖，最適合帶有「大地與金屬」質感的顏色。</p>
+            
+            <div class="visual-box">
+                <span style="font-size: 0.8em; color: #aaa;">✅ 適合您的「正紅與唇色」：</span>
+                <div class="color-grid">
+                    <div class="swatch" style="background: #b91c1c;"></div> <div class="swatch" style="background: #ea580c;"></div> <div class="swatch" style="background: #9a3412;"></div> <div class="swatch" style="background: #7c2d12;"></div> </div>
+                <div style="margin-top:10px; font-size:0.75em; color:var(--txt);">圖示：正紅為高飽和度紅（左一），能瞬間提亮暖皮。</div>
+            </div>
+
+            <div class="visual-box" style="background: #fdf2f8;">
+                <span style="font-size: 0.8em; color: #aaa;">❌ 應避開的「冷粉色」：</span>
+                <div class="color-grid">
+                    <div class="swatch" style="background: #f472b6; opacity: 0.3;"></div>
+                    <div class="swatch" style="background: #e879f9; opacity: 0.3;"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="mod_makeup" class="module" style="display:none;">
-        <div class="style-bar">
-            <button class="s-btn active" onclick="applyStyle('elegant')">精緻氣質</button>
-            <button class="s-btn" onclick="applyStyle('kpop')">韓系水光</button>
-            <button class="s-btn" onclick="applyStyle('western')">歐美立體</button>
-            <button class="s-btn" onclick="applyStyle('natural')">自然裸妝</button>
-            <button class="s-btn" onclick="applyStyle('japanese')">日系甜美</button>
-            <button class="s-btn" onclick="applyStyle('cool')">個性個性</button>
-        </div>
-
-        <div class="card" id="style_instruction_card">
-            <h3 id="style_name">精緻氣質妝</h3>
-            <p id="style_intro" style="font-size: 0.85em; color: #888;"></p>
-            <div id="step_container"></div>
+    <div id="m_data" class="module" style="display:none;">
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-ruler-combined"></i> 五官比例微觀分析</h3>
+            <div class="step-info">人中比例：1 : 0.18</div>
+            <div class="metric-bar"><div id="ptr_lip" class="pointer" style="left: 80%;"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.7em; color:#bbb;"><span>短人中</span><span>平均</span><span>長人中</span></div>
+            
+            <div class="step-info" style="margin-top:25px;">眼眉距離：廣</div>
+            <div class="metric-bar"><div id="ptr_eye" class="pointer" style="left: 75%;"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.7em; color:#bbb;"><span>狹窄</span><span>平均</span><span>寬廣</span></div>
         </div>
     </div>
 
-    <div id="mod_skincare" class="module" style="display:none;">
-        <div class="card">
-            <h3><i class="fa-solid fa-pump-medical"></i> 專屬護膚流程</h3>
-            <div class="step-text" id="skin_routine"></div>
-            <p><i class="fa-solid fa-check-circle" style="color:#10b981;"></i> 推薦成分：<span id="skin_yes">B5, 積雪草</span></p>
-            <p><i class="fa-solid fa-times-circle" style="color:#ef4444;"></i> 避免成分：<span id="skin_no">高濃度果酸</span></p>
+    <div id="m_makeup" class="module" style="display:none;">
+        <div class="nav-scroll">
+            <button class="tab active" onclick="updateV('elegant')">精緻氣質</button>
+            <button class="tab" onclick="updateV('kpop')">韓系水光</button>
+            <button class="tab" onclick="updateV('western')">歐美立體</button>
+        </div>
+
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-wand-magic-sparkles"></i> 眉眼動態圖解教學</h3>
+            <div class="visual-box">
+                <svg id="svg_main" viewBox="0 0 100 60">
+                    <ellipse cx="50" cy="30" rx="35" ry="25" fill="#fff" stroke="#eee" stroke-width="0.2"/>
+                    <path id="svg_brow" d="M 35 25 Q 45 15 55 25" stroke="#444" fill="none" stroke-width="2" stroke-linecap="round"/>
+                    <path id="svg_shadow" d="M 32 35 Q 42 25 52 35" fill="#d4a373" opacity="0.5"/>
+                    <circle cx="35" cy="25" r="0.8" fill="var(--p)"/>
+                    <circle cx="45" cy="15" r="0.8" fill="var(--p)"/>
+                </svg>
+            </div>
+            <div class="step-info" id="v_text">
+                <b>變美思路：</b><br>
+                建議「小挑眉」畫法。眉頭對齊鼻翼，眉峰挑高在黑眼球外緣上方。
+            </div>
         </div>
     </div>
 
-    <button class="btn-action" style="background:#eee; color:#666;" onclick="location.reload()">重新檢測</button>
+    <button class="main-btn" style="background:#eee; color:#666;" onclick="location.reload()">重新檢測</button>
 </div>
 
 <script type="module">
     import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js";
 
-    // --- 1. 初始化與相機設定 ---
-    let faceLandmarker;
-    let video = document.getElementById("video");
-    let currentGender = "female";
+    let faceL;
+    let v = document.getElementById("v");
+    let currentG = "female";
 
     async function init() {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        video.srcObject = stream;
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        v.srcObject = stream;
         const fileset = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
-        faceLandmarker = await FaceLandmarker.createFromOptions(fileset, {
+        faceL = await FaceLandmarker.createFromOptions(fileset, {
             baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" },
             runningMode: "IMAGE"
         });
     }
     init();
 
-    window.setGender = (g) => {
-        currentGender = g;
-        document.querySelectorAll('.g-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(g==='female'?'f_btn':'m_btn').classList.add('active');
-        document.documentElement.style.setProperty('--p', g==='male' ? '#818cf8' : '#d8b4fe');
+    // 視覺圖譜配置庫 (眉毛與眼影顏色)
+    const V_ATLAS = {
+        elegant: { brow: "M 35 25 Q 45 15 55 25", shadow: "#d4a373", txt: "<b>精緻氣質圖譜：</b><br>眉峰明顯，強調知性美。眼影選用大地消腫色。" },
+        kpop: { brow: "M 35 25 Q 45 25 55 25", shadow: "#fbcfe8", txt: "<b>韓系水光圖譜：</b><br>眉型平直減齡。眼影以淺粉色為主，強調臥蠶。" },
+        western: { brow: "M 35 20 Q 45 5 55 20", shadow: "#a16207", txt: "<b>歐美立體圖譜：</b><br>高挑眉收窄臉型。眼影強調深邃眼窩。" }
     };
 
-    // --- 2. 核心 6 大風格資料庫 ---
-    const styleDB = {
-        elegant: {
-            title: "精緻氣質妝", intro: "重點在於比例平衡與高級感的修飾。適合正式場合與知性穿搭。",
-            steps: [
-                { t: "眉毛：順著眼型畫出有弧度的氣質眉，眉尾適度拉長。", img: "e_brow.jpg" },
-                { t: "修容：鼻影強調山根轉折，腮紅斜向拉提。", img: "e_contour.jpg" }
-            ]
-        },
-        kpop: {
-            title: "韓系水光妝", intro: "強調澎潤感與清透水光，打造無辜與逆齡的女神感。",
-            steps: [
-                { t: "底妝：使用氣墊粉餅拍出光澤，局部提亮 C 字位。", img: "k_base.jpg" },
-                { t: "眼妝：重點在臥蠶提亮，使用碎鑽珠光點綴。", img: "k_eye.jpg" }
-            ]
-        },
-        western: {
-            title: "歐美立體妝", intro: "透過強烈的明暗對比改變面部結構，呈現深邃感與力量感。",
-            steps: [
-                { t: "眉毛：俐落高挑眉，眉峰定於黑眼球外緣上方。", img: "w_brow.jpg" },
-                { t: "修容：顴骨下方深色修容，強調面部折疊度。", img: "w_contour.jpg" }
-            ]
-        },
-        natural: {
-            title: "自然裸妝系", intro: "偽素顏的最高境界。強調原生肌膚質感與柔和五官。",
-            steps: [
-                { t: "底妝：輕薄遮瑕，保留原生毛孔感與光澤。", img: "n_base.jpg" },
-                { t: "眉毛：保留原生毛流，僅用眉粉填補空隙。", img: "n_brow.jpg" }
-            ]
-        },
-        japanese: {
-            title: "日系甜美妝", intro: "利用大面積色塊渲染，打造軟萌感與無辜的氛圍感。",
-            steps: [
-                { t: "腮紅：眼下 2cm 處大面積橫向輕掃，營造微醺感。", img: "j_blush.jpg" },
-                { t: "眼妝：眼影著重下眼瞼，刷出根根分明的睫毛。", img: "j_eye.jpg" }
-            ]
-        },
-        cool: {
-            title: "個性個性妝", intro: "色彩實驗室。利用大膽線條展現獨特個人風格。",
-            steps: [
-                { t: "眼線：加入彩色或圖形眼線點綴眼尾。", img: "c_eye.jpg" },
-                { t: "唇妝：選用高飽和色或深色系，模糊唇線。", img: "c_lip.jpg" }
-            ]
+    window.updateV = (style) => {
+        const atlas = V_ATLAS[style];
+        document.getElementById("svg_brow").setAttribute("d", atlas.brow);
+        document.getElementById("svg_shadow").setAttribute("fill", atlas.shadow);
+        document.getElementById("v_text").innerHTML = atlas.txt;
+        document.querySelectorAll('#m_makeup .tab').forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    };
+
+    window.runAnalysis = async () => {
+        const c = document.createElement("canvas");
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext("2d").drawImage(v, 0, 0);
+        const res = await faceL.detect(c);
+        if (res.faceLandmarks.length > 0) {
+            document.getElementById("p_start").classList.remove("active");
+            document.getElementById("p_res").classList.add("active");
         }
     };
 
-    // --- 3. 診斷與 UI 邏輯 ---
-    window.captureAndAnalyze = async () => {
-        const c = document.createElement("canvas");
-        c.width = video.videoWidth; c.height = video.videoHeight;
-        c.getContext("2d").drawImage(video, 0, 0);
-        const result = await faceLandmarker.detect(c);
-        if (result.faceLandmarks.length > 0) {
-            analyze(result.faceLandmarks[0]);
-            document.getElementById("page_camera").classList.remove("active");
-            document.getElementById("page_result").classList.add("active");
-        } else alert("請將臉部置於框內！");
-    };
-
-    function analyze(lm) {
-        const getD = (p1, p2) => Math.hypot(p1.x-p2.x, p1.y-p2.y);
-        const faceH = getD(lm[10], lm[152]), faceW = getD(lm[234], lm[454]);
-        const wh = faceH / faceW;
-        let shape = wh < 1.15 ? "圓型臉" : (wh > 1.25 ? "長型臉" : "鵝蛋臉");
-        
-        document.getElementById("res_face_title").innerText = `${shape} | 綜合分析`;
-        document.getElementById("skin_routine").innerHTML = "<b>早：</b> 溫和洗臉 > 補水精華 > 防曬<br><b>晚：</b> 卸妝 > 修護霜 > 局部點塗";
-        applyStyle('elegant'); // 預設加載
-    }
-
-    window.switchMod = (id) => {
-        document.querySelectorAll('.module').forEach(m => m.style.display = 'none');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).style.display = 'block';
-        event.currentTarget.classList.add('active');
-    };
-
-    window.applyStyle = (key) => {
-        const s = styleDB[key];
-        document.getElementById("style_name").innerText = s.title;
-        document.getElementById("style_intro").innerText = s.intro;
-        const container = document.getElementById("step_container");
-        container.innerHTML = s.steps.map((st, i) => `
-            <div class="step-img">【圖解：${st.img}】</div>
-            <div class="step-text"><b>Step ${i+1}.</b> ${st.t}</div>
-        `).join("");
-        document.querySelectorAll('.s-btn').forEach(b => b.classList.remove('active'));
+    window.showM = (id) => {
+        document.querySelectorAll(".module").forEach(m => m.style.display = "none");
+        document.querySelectorAll(".nav-scroll .tab").forEach(t => t.classList.remove("active"));
+        document.getElementById(id).style.display = "block";
         event.currentTarget.classList.add('active');
     };
 </script>
+
 </body>
 </html>
