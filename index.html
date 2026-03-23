@@ -3,137 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI DC 智慧美學全方位診斷 V20</title>
+    <title>AESTHETIC AI DC - 美學智慧導航旗艦版</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --p: #d8b4fe; --txt: #333; --bg: #f9f9fb; --card: #ffffff; --acc: #f3e8ff; --gray: #f0f0f0; }
-        body { font-family: 'PingFang TC', sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; }
-        .page { display: none; padding: 20px; max-width: 500px; margin: auto; animation: fadeIn 0.4s; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* UI 元件：高級感 */
-        .glass-card { background: var(--card); border-radius: 25px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f0f0f0; }
-        .main-btn { display: block; width: 90%; margin: 25px auto; padding: 18px; background: var(--p); color: white; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; }
+        :root { 
+            --p: #d8b4fe; /* 淺紫 */
+            --b: #a78bfa; /* 莫蘭迪藍 */
+            --g: #86efac; /* 柔和綠 */
+            --d: #4c1d95; /* 深紫 */
+            --bg: #f9f9fb; /* 淺灰背景 */
+            --txt: #3d3d3d; /* 深灰文字 */
+            --card: #ffffff; /* 卡片白 */
+            --gray: #f3f4f6; /* 淺灰 */
+        }
+        body { font-family: 'Optima', 'PingFang TC', -apple-system, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; }
         
-        /* 五官數據比例尺 (復刻截圖 10) */
-        .metric-row { margin-bottom: 15px; }
-        .metric-header { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 5px; }
-        .bar-bg { width: 100%; height: 6px; background: #eee; border-radius: 10px; position: relative; margin: 10px 0; }
-        .bar-ptr { position: absolute; top: -5px; width: 16px; height: 16px; background: var(--p); border: 3px solid white; border-radius: 50%; transform: translateX(-50%); transition: 0.6s; }
-        .bar-lbl { display: flex; justify-content: space-between; font-size: 0.7em; color: #bbb; }
+        .container { display: flex; flex-direction: column; max-width: 1400px; margin: auto; padding: 20px; box-sizing: border-box; }
+        
+        /* 頁首 */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; margin-bottom: 20px; }
+        header h1 { font-size: 2.2em; font-weight: 300; letter-spacing: 5px; margin: 0; color: var(--d); }
+        .score-box { background: var(--card); padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
 
-        /* 個人色彩網格 (復刻截圖 1, 2) */
-        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
-        .swatch { aspect-ratio: 1; border-radius: 10px; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        /* 主區域 */
+        .main-content { display: flex; gap: 20px; }
+        
+        /* 左側分析區域 */
+        .left-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* 卡片樣式 (參照截圖) */
+        .card { background: var(--card); border-radius: 25px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f0f0f0; transition: 0.3s; }
+        .card h3 { display: flex; align-items: center; gap: 10px; color: var(--d); font-size: 1.1em; margin-top: 0; margin-bottom: 20px; }
+        .card i { font-size: 1.3em; }
 
-        /* 手把手圖解 (復刻截圖 9) */
-        .tutorial-img { width: 100%; border-radius: 15px; background: var(--gray); margin: 10px 0; aspect-ratio: 1.2; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #999; }
-        .step-txt { font-size: 0.85em; line-height: 1.6; color: #666; padding-left: 12px; border-left: 3px solid var(--p); }
+        /* 個性化卡片 */
+        .badge-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .badge { color: var(--d); padding: 5px 15px; border-radius: 20px; font-size: 0.85em; font-weight: bold; }
 
-        #cam_box { width: 90%; margin: auto; border-radius: 40px; overflow: hidden; border: 8px solid white; position: relative; }
+        /* 色彩網格 */
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .swatch { aspect-ratio: 1; border-radius: 12px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* 場合導航 (新增功能) */
+        .occasion-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .occasion-btn { background: var(--gray); border-radius: 20px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; border: 1px solid #eee; }
+        .occasion-btn.active { background: var(--g); border-color: var(--g); box-shadow: 0 4px 10px rgba(134, 239, 172, 0.3); color: white; }
+        .occasion-btn.active h4 { color: white; }
+
+        /* 教學圖示和示意圖 */
+        .photo-box { width: 100%; border-radius: 20px; background: var(--gray); display: flex; align-items: center; justify-content: center; color: #999; margin: 15px 0; }
+        .diagram { width: 100%; max-width: 300px; }
+        .list-item { border-left: 3px solid var(--p); padding-left: 15px; margin: 15px 0; font-size: 0.9em; line-height: 1.7; }
+        .list-item b { color: var(--txt); }
+
+        /* Canvas 與相機畫面 */
+        #cam_container { width: 100%; aspect-ratio: 0.8; margin: auto; border-radius: 40px; overflow: hidden; border: 8px solid white; position: relative; }
         video { width: 100%; transform: scaleX(-1); display: block; }
+
+        .btn-main { display: block; width: 250px; margin: 20px auto; padding: 18px; background: var(--d); color: white; border-radius: 40px; text-align: center; font-weight: bold; text-decoration: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="p_start" class="page active">
-    <div style="text-align: center; margin-top: 40px;">
-        <h1 style="letter-spacing: 5px; font-weight: 300;">AESTHETIC AI</h1>
-        <p style="opacity: 0.4; font-size: 0.9em;">解碼您的專屬色彩與比例數據</p>
-    </div>
-    
-    <div id="cam_box">
-        <video id="v" autoplay playsinline></video>
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 3px dashed rgba(255,255,255,0.4); border-radius: 50%;"></div>
-    </div>
+<div class="container">
+    <header>
+        <h1>AESTHETIC AI DC</h1>
+        <div class="score-box">分析得分：92 | Fresh</div>
+    </header>
 
-    <div style="display:flex; justify-content:center; gap:15px; margin: 30px 0;">
-        <button class="main-btn" style="width:140px; background:white; color:var(--p); border:1px solid var(--p);" onclick="setG('female')">女士美學</button>
-        <button class="main-btn" style="width:140px; background:white; color:var(--p); border:1px solid var(--p);" onclick="setG('male')">男士理容</button>
-    </div>
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="card">
+                <h3><i class="fa-solid fa-face-laugh-beam"></i> 面部分析與風格策略</h3>
+                <div style="font-size: 0.9em;">橢圓臉 | Elegant Sophisticated風格</div>
+                <div class="badge-list">
+                    <span class="badge" style="background:#f3e8ff;">柔和眉</span>
+                    <span class="badge" style="background:#e0f2fe;">上揚眼線</span>
+                    <span class="badge" style="background:#fef0f2;">斜向腮紅</span>
+                </div>
+                <p><b>策略：</b>強調五官的精緻感與俐落感，打造知性商務風格。</p>
+            </div>
 
-    <button class="main-btn" onclick="runAnalysis()">開始深度診斷報告</button>
-</div>
+            <div class="card">
+                <h3><i class="fa-solid fa-plane-arrival g"></i> 場合風格導航 Occasion Style Navigator</h3>
+                <div class="occasion-grid">
+                    <div class="occasion-btn active" onclick="updateOccasion('interview')">
+                        <h4><i class="fa-solid fa-briefcase"></i> 商務面試</h4>
+                    </div>
+                    <div class="occasion-btn" onclick="updateOccasion('party')">
+                        <h4><i class="fa-solid fa-cocktail"></i> 週末派對</h4>
+                    </div>
+                    <div class="occasion-btn" onclick="updateOccasion('date')">
+                        <h4><i class="fa-solid fa-heart"></i> 浪漫約會</h4>
+                    </div>
+                    <div class="occasion-btn" onclick="updateOccasion('gym')">
+                        <h4><i class="fa-solid fa-dumbbell"></i> 健身訓練</h4>
+                    </div>
+                    <div class="occasion-btn" onclick="updateOccasion('dinner')">
+                        <h4><i class="fa-solid fa-utensils"></i> 正式晚宴</h4>
+                    </div>
+                </div>
+                <div id="occasion_adv" style="font-size: 0.9em;">
+                    </div>
+            </div>
 
-<div id="p_res" class="page">
-    <div style="text-align: center; margin-bottom: 25px;">
-        <h2 id="res_face">楕圓面 | 暖色調</h2>
-        <div style="display:inline-block; padding: 5px 15px; background: var(--acc); border-radius: 20px; font-size: 0.8em; font-weight: bold;">膚色 ID: 2WG (暖調二白)</div>
-    </div>
-
-    <div class="glass-card">
-        <h3><i class="fa-solid fa-ruler-combined"></i> 深度五官比例數據</h3>
-        <div class="metric-row">
-            <div class="metric-header"><span>眼睛寬度 / 臉寬</span><span id="val_eye">72%</span></div>
-            <div class="bar-bg"><div id="ptr_eye" class="bar-ptr" style="left: 72%;"></div></div>
-            <div class="bar-lbl"><span>窄</span><span>平均</span><span>廣</span></div>
+            <div class="card">
+                <h3><i class="fa-solid fa-flask-vial"></i> 混合肌保養與成分分析</h3>
+                <p>Skincare SOP 早晚潔面 → 保濕 → 防曬。</p>
+                <p style="background:#e8f5e9; color:#2e7d32; padding:10px; border-radius:10px;">✅ 適合：神經醯胺, 積雪草, B5</p>
+                <p style="background:#ffebee; color:#c62828; padding:10px; border-radius:10px;">❌ 避免：高濃度水光, 水楊酸, 綠茶</p>
+            </div>
         </div>
-        <div class="metric-row">
-            <div class="metric-header"><span>人中長度 / 下臉</span><span id="val_lip">80%</span></div>
-            <div class="bar-bg"><div id="ptr_lip" class="bar-ptr" style="left: 80%;"></div></div>
-            <div class="bar-lbl"><span>短</span><span>平均</span><span>長</span></div>
+
+        <div class="card" style="flex: 1.5;">
+            <h3><i class="fa-solid fa-magnifying-glass-location p"></i> 您的專屬美學智慧地圖</h3>
+            
+            <div class="photo-box" style="aspect-ratio: 1.2;">
+                <svg viewBox="0 0 100 60">
+                    <ellipse cx="50" cy="30" rx="35" ry="25" fill="#fcf8ff" stroke="#eee" stroke-width="0.3"/>
+                    <path id="brow_path" d="M 35 25 Q 45 15 55 25" stroke="#444" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+                    <circle cx="50" cy="30" r="1.5" fill="#fff" opacity="0.6"/>
+                    <path d="M 30 35 Q 40 25 50 35" fill="#fde2e4" opacity="0.6"/>
+                    <text x="50" y="55" font-size="3" text-anchor="middle" fill="#aaa">臉型專屬修容地圖</text>
+                </svg>
+            </div>
+            
+            <div class="list-item"><b>1. 眉毛：</b>弧形 eyebrow定位點標註，增加眉峰立體感。</div>
+            <div class="list-item"><b>2. 眼線：</b>Elongated畫法，提升眼神精緻度。</div>
+
+            <div class="photo-box" style="aspect-ratio: 1.5; background:var(--gray);">
+                <svg viewBox="0 0 100 50">
+                    <ellipse cx="25" cy="25" rx="15" ry="20" fill="#f0f0f0" stroke="#eee" stroke-width="0.3"/>
+                    <ellipse cx="75" cy="25" rx="15" ry="20" fill="#f0f0f0" stroke="#eee" stroke-width="0.3"/>
+                    <text x="25" y="45" fill="#aaa" font-size="3" text-anchor="middle">橢圓臉髮型參考 (Side-part bob)</text>
+                    <text x="75" y="45" fill="#aaa" font-size="3" text-anchor="middle">橢圓臉領口參考 (V-neck)</text>
+                </svg>
+            </div>
+
+            <div class="color-grid">
+                <div class="swatch" style="background: #b91c1c;"></div> <div class="swatch" style="background: #ea580c;"></div> <div class="swatch" style="background: #faedcd;"></div> <div class="swatch" style="background: #b39ddb;"></div> </div>
+            <div style="font-size:0.8em; color:var(--b);">Warm Autumn大師色盤 (Muted Gold)</div>
         </div>
     </div>
 
-    <div class="glass-card">
-        <h3><i class="fa-solid fa-palette"></i> 個人色彩判定：秋季暖暖</h3>
-        <p style="font-size: 0.8em; opacity: 0.6;">AI 透過 5 種彩度檢查與 2 類冷暖對比判定您的本命色：</p>
-        <div class="color-grid">
-            <div class="swatch" style="background: #b91c1c;"></div> <div class="swatch" style="background: #ea580c;"></div>
-            <div class="swatch" style="background: #d4a373;"></div>
-            <div class="swatch" style="background: #7c2d12;"></div>
-        </div>
-        <p class="step-txt">推薦應用：適合使用巧克力棕、焦糖色髮色。彩妝建議使用高彩度磚紅（如左一色塊）。</p>
-    </div>
-
-    <div class="glass-card">
-        <h3><i class="fa-solid fa-wand-magic-sparkles"></i> 臉型專屬修容教學</h3>
-        <div class="tutorial-img">【圖示：高光與陰影分布地圖】</div>
-        <p class="step-txt"><b>打造內輪廓層次：</b><br>您的內輪廓占比偏高，建議將陰影打在顴弓最高點往內收縮，並在面中打上膨脹高光。</p>
-        
-        <div class="tutorial-img">【圖示：眉毛與眼線推薦畫法】</div>
-        <p class="step-txt"><b>眼妝重點：</b><br>眼距平均，建議「下垂眼線」增加溫柔感。眼影選用大地暖棕色。</p>
-    </div>
-
-    <button class="main-btn" style="background:#eee; color:#666;" onclick="location.reload()">重新檢測</button>
 </div>
 
 <script type="module">
     import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js";
 
-    let faceL;
-    let v = document.getElementById("v");
-
-    async function init() {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-        v.srcObject = stream;
-        const fileset = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
-        faceL = await FaceLandmarker.createFromOptions(fileset, {
-            baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" },
-            runningMode: "IMAGE"
-        });
-    }
-    init();
-
-    window.setG = (g) => {
-        document.documentElement.style.setProperty('--p', g==='male' ? '#818cf8' : '#d8b4fe');
-        // 記錄性別以切換後續邏輯
+    // --- 互動邏輯：場合風格導航 (新增功能) ---
+    const OCCASION_DATA = {
+        interview: {
+            brow: "M 35 25 Q 45 15 55 25", // 挑眉
+            adv: "<b>商務面試：俐落與專業。</b><br>建議選用『霧面底妝』與大地色眼影。穿搭選擇『深色西裝領口』，髮型建議『俐落低馬尾』或『直髮』。"
+        },
+        party: {
+            brow: "M 35 25 Q 45 25 55 25", // 平眉
+            adv: "<b>週末派對：活力與時尚。</b><br>建議嘗試『閃耀亮片眼影』與鮮豔唇彩。穿搭選擇『一字領亮片裙』，髮型建議『高馬尾』或『波浪捲』。"
+        }
     };
 
-    window.runAnalysis = async () => {
-        const c = document.createElement("canvas");
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext("2d").drawImage(v, 0, 0);
-        const res = await faceL.detect(c);
-        if (res.faceLandmarks.length > 0) {
-            document.getElementById("p_start").classList.remove("active");
-            document.getElementById("p_res").classList.add("active");
-            // 這裡會動態更新比例尺 pointer 的位置
-        }
+    window.updateOccasion = (id) => {
+        document.querySelectorAll('.occasion-btn').forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        
+        const data = OCCASION_DATA[id] || OCCASION_DATA.interview;
+        document.getElementById('brow_path').setAttribute('d', data.brow);
+        document.getElementById('occasion_adv').innerHTML = data.adv;
     };
 </script>
 
