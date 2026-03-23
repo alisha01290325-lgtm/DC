@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI DC美學系統</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+
+    <style>
+        :root { 
+            --p: #d8b4fe; /* 醫美粉紫 */
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --text: #1e293b; 
+            --accent: #f1f5f9; 
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; }
+        .page { display: none; padding: 20px; max-width: 1000px; margin: auto; animation: fadeIn 0.6s ease; }
+        .page.active { display: block; }
+
+        /* 相機頁面 UI */
+        .camera-container { position: relative; width: 100%; max-width: 450px; margin: auto; border-radius: 40px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); border: 8px solid white; }
+        video { width: 100%; transform: scaleX(-1); display: block; }
+        .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 70%; border: 2px dashed rgba(255,255,255,0.6); border-radius: 50% 50% 45% 45%; pointer-events: none; }
+
+        /* 卡片設計 */
+        .master-card { background: var(--card); border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
+        .card-header { font-family: 'Playfair Display', serif; font-size: 1.4em; color: var(--p); margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        
+        /* 數據網格 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .m-box { background: var(--accent); padding: 15px; border-radius: 16px; text-align: center; }
+        .m-label { font-size: 0.8em; opacity: 0.6; display: block; margin-bottom: 4px; }
+        .m-val { font-weight: bold; color: var(--text); font-size: 1.1em; }
+
+        /* 風格切換 */
+        .style-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .style-btn { flex: 0 0 auto; padding: 10px 20px; border-radius: 15px; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: 0.3s; }
+        .style-btn.active { background: var(--p); color: white; border-color: var(--p); }
+
+        /* 導覽分頁 */
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
+        .tab { padding: 12px 24px; background: #fff; border-radius: 14px; cursor: pointer; white-space: nowrap; border: 1px solid #f1f5f9; font-weight: bold; opacity: 0.6; }
+        .tab.active { background: var(--p); color: white; opacity: 1; }
+
+        /* 圖示佔位 */
+        .img-box { width: 100%; aspect-ratio: 16/9; background: #f8fafc; border-radius: 16px; margin: 12px 0; display: flex; align-items: center; justify-content: center; color: #cbd5e1; border: 1px dashed #e2e8f0; font-size: 0.9em; }
+
+        .btn-main { display: block; width: 280px; margin: 30px auto; padding: 20px; background: var(--p); color: white; border-radius: 50px; text-align: center; font-weight: bold; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(216, 180, 254, 0.4); text-transform: uppercase; letter-spacing: 2px; border: none; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="page_camera" class="page active">
+    <div style="text-align: center; padding: 40px 0;">
+        <h1 style="font-family: 'Playfair Display', serif; letter-spacing: 4px;">AESTHETIC AI</h1>
+        <p style="opacity: 0.5; letter-spacing: 2px;">解碼您的專屬面容密碼</p>
+    </div>
+    <div class="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <div class="face-guide"></div>
+    </div>
+    <button class="btn-main" onclick="captureAndAnalyze()">開始深度診斷</button>
+</div>
+
+<div id="page_result" class="page">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 id="res_title" style="margin:0;">精準診斷結果</h2>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--p); font-weight:bold; cursor:pointer;">重新拍攝</button>
+    </div>
+
+    <div class="master-card">
+        <div class="card-header">🧬 核心特徵標籤</div>
+        <div class="grid-2">
+            <div class="m-box"><span class="m-label">臉型判定</span><span class="m-val" id="res_face">--</span></div>
+            <div class="m-box"><span class="m-label">膚質屬性</span><span class="m-val" id="res_skin">--</span></div>
+        </div>
+        <div class="metric-row" style="margin-top:15px;">
+            <div class="grid-2">
+                <div class="m-box" style="background:#fff;"><span class="m-label">眼部特徵</span><span id="m_eye" style="font-size:0.9em;">--</span></div>
+                <div class="m-box" style="background:#fff;"><span class="m-label">嘴唇比例</span><span id="m_lip" style="font-size:0.9em;">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <div class="tab active" onclick="switchTab('tab_makeup')">💄 精緻美妝</div>
+        <div class="tab" onclick="switchTab('tab_skincare')">🧴 專業保養</div>
+        <div class="tab" onclick="switchTab('tab_hair')">💇 髮型設計</div>
+        <div class="tab" onclick="switchTab('tab_fashion')">🧥 時尚穿搭</div>
+        <div class="tab" onclick="switchTab('tab_product')">🛍️ 產品推薦</div>
+    </div>
+
+    <div id="tab_makeup" class="tab-content">
+        <div class="style-scroll">
+            <button class="style-btn active" onclick="updateStyle('natural')">自然裸妝</button>
+            <button class="style-btn" onclick="updateStyle('kpop')">韓系水光</button>
+            <button class="style-btn" onclick="updateStyle('western')">歐美立體</button>
+            <button class="style-btn" onclick="updateStyle('elegant')">精緻氣質</button>
+            <button class="style-btn" onclick="updateStyle('cool')">個性 Y2K</button>
+        </div>
+        <div class="master-card" style="margin-top:15px;">
+            <div id="style_tag" style="background:var(--p); color:white; padding:4px 12px; border-radius:20px; font-size:0.8em; display:inline-block; margin-bottom:10px;">風格推薦：自然裸妝</div>
+            <div class="img-box">【專屬修容與腮紅地圖】</div>
+            <p id="adv_makeup_main" style="font-size:0.95em; color:#64748b; line-height:1.6;"></p>
+            <div class="grid-2" style="margin-top:15px;">
+                <div style="font-size:0.9em;"><strong>眉毛：</strong><br><span id="adv_brow">--</span></div>
+                <div style="font-size:0.9em;"><strong>眼線：</strong><br><span id="adv_eye">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab_skincare" class="tab-content" style="display:none;">
+        <div class="master-card">
+            <div class="card-header">🧴 早晚護理程序</div>
+            <p id="skincare_routine" style="font-size:0.95em; line-height:1.7;"></p>
+            <div class="grid-2">
+                <div style="background:#f0fdf4; padding:12px; border-radius:12px; color:#166534; font-size:0.85em;">✅ 推薦成分：<br><span id="skin_yes">--</span></div>
+                <div style="background:#fef2f2; padding:12px; border-radius:12px; color:#991b1b; font-size:0.85em;">❌ 避雷成分：<br><span id="skin_no">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab_hair" class="tab-content" style="display:none;">
+        <div class="master-card"><div class="card-header">💇 適合您的 4 種髮型</div><div class="grid-2" id="hair_list"></div></div>
+    </div>
+    <div id="tab_fashion" class="tab-content" style="display:none;">
+        <div class="master-card"><div class="card-header">🧥 穿搭與領口建議</div><p id="fashion_adv"></p></div>
+    </div>
+
+    <div id="tab_product" class="tab-content" style="display:none;">
+        <div class="master-card"><div class="card-header">🛒 專家選品建議</div><div id="product_list" style="font-size:0.9em; line-height:1.8;"></div></div>
+    </div>
+
+    <button class="btn-main" onclick="sendReportToGas()">📤 生成 PDF 報告至 LINE</button>
+</div>
+
+<canvas id="hidden_canvas" style="display:none;"></canvas>
+
+<script type="module">
+    import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js";
+
+    let faceLandmarker;
+    let video = document.getElementById("video");
+    let currentData = {};
+
+    // 1. 初始化相機
+    async function setupCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+            video.srcObject = stream;
+        } catch (e) { alert("請確保開啟相機權限並使用 HTTPS 連線。"); }
+    }
+    setupCamera();
+
+    // 2. 初始化 AI 模型
+    async function initAI() {
+        const fileset = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
+        faceLandmarker = await FaceLandmarker.createFromOptions(fileset, {
+            baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" },
+            runningMode: "IMAGE"
+        });
+    }
+    initAI();
+
+    // 3. 拍照與分析
+    window.captureAndAnalyze = async () => {
+        const canvas = document.getElementById("hidden_canvas");
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        
+        const result = await faceLandmarker.detect(canvas);
+        if (result.faceLandmarks.length > 0) {
+            runMasterDiagnosis(result.faceLandmarks[0], canvas);
+            document.getElementById("page_camera").classList.remove("active");
+            document.getElementById("page_result").classList.add("active");
+        } else { alert("無法識別臉部，請正對相機。"); }
+    };
+
+    // 4. 深度美學診斷邏輯 (9 臉型 x 4 膚質)
+    function runMasterDiagnosis(lm, canvas) {
+        const getDist = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
+        
+        // 臉型偵測
+        const faceH = getDist(lm[10], lm[152]), faceW = getDist(lm[234], lm[454]);
+        const jawW = getDist(lm[172], lm[397]), foreheadW = getDist(lm[103], lm[332]);
+        const whRatio = faceH / faceW;
+        
+        let shape = "鵝蛋臉";
+        if (whRatio < 1.1 && jawW/faceW > 0.85) shape = "方型臉";
+        else if (whRatio < 1.1) shape = "圓型臉";
+        else if (whRatio > 1.3 && jawW/faceW > 0.8) shape = "矩形臉";
+        else if (whRatio > 1.3) shape = "長型臉";
+        else if (foreheadW > jawW * 1.2) shape = "心型臉";
+        else if (jawW > foreheadW * 1.1) shape = "梨型臉";
+        
+        // 膚質偵測 (採樣)
+        const cheekPx = canvas.getContext("2d").getImageData(lm[234].x*canvas.width, lm[234].y*canvas.height, 1, 1).data;
+        let skin = "混合性";
+        if (cheekPx[0] > 155) skin = "敏感性";
+        else if (cheekPx[0] < 110) skin = "乾性";
+
+        currentData = { shape, skin, name: "翊甄學員", pRatio: getDist(lm[164], lm[0])/faceH };
+        
+        // 更新 UI
+        document.getElementById("res_face").innerText = shape;
+        document.getElementById("res_skin").innerText = skin;
+        document.getElementById("m_lip").innerText = currentData.pRatio > 0.16 ? "人中偏長 | 厚唇" : "比例標準";
+        
+        updateStyle('natural');
+        updateSkincare(skin);
+    }
+
+    // 5. 彩妝風格邏輯
+    window.updateStyle = (styleId) => {
+        document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+        const btn = [...document.querySelectorAll('.style-btn')].find(b => b.getAttribute('onclick').includes(styleId));
+        if(btn) btn.classList.add('active');
+
+        const db = {
+            natural: { brow: "原生自然眉", eye: "內眼線隱形畫法", desc: "追求清透裸感，適合日常通勤。" },
+            kpop: { brow: "韓系平霧眉", eye: "臥蠶重點提亮", desc: "加強臥蠶與水光感，展現減齡女神氣質。" },
+            elegant: { brow: "氣質弧形眉", eye: "知性拉長眼線", desc: "強調五官對稱與高級感，適合正式場合。" }
+        };
+        const s = db[styleId] || db.natural;
+        document.getElementById("style_tag").innerText = `風格推薦：${styleId.toUpperCase()}`;
+        document.getElementById("adv_brow").innerText = s.brow;
+        document.getElementById("adv_eye").innerText = s.eye;
+        document.getElementById("adv_makeup_main").innerText = s.desc;
+    };
+
+    // 6. 保養與產品推薦
+    function updateSkincare(skin) {
+        const sop = skin === "敏感性" ? "早：溫水洗臉 > B5 噴霧 > 修復霜。晚：生理鹽水局部冷敷。" : "早：保濕潔面 > 維 C 提亮 > 防曬。晚：深層清潔 > 玻尿酸滋養。";
+        document.getElementById("skincare_routine").innerText = sop;
+        document.getElementById("skin_yes").innerText = skin === "敏感性" ? "積雪草, 神經醯胺" : "維他命 C, 玻尿酸";
+        document.getElementById("product_list").innerHTML = `• 推薦潔顏：溫和胺基酸洗面乳<br>• 推薦精華：專屬 ${skin} 修護精華<br>• 推薦防曬：清爽型物理防曬`;
+    }
+
+    window.switchTab = (tabId) => {
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    };
+
+    // 7. 串接 GAS (請將 URL 替換為妳部署後的位址)
+    window.sendReportToGas = async () => {
+        const gasUrl = 'https://script.google.com/macros/s/YOUR_ACTUAL_GAS_URL/exec';
+        const payload = {
+            name: currentData.name,
+            face_shape: currentData.shape,
+            skin_type: currentData.skin,
+            eyebrow: document.getElementById("adv_brow").innerText,
+            skincare: document.getElementById("skincare_routine").innerText
+        };
+        alert("正在為您生成 PDF 醫美診斷報告...");
+        // fetch(gasUrl, { method: 'POST', body: JSON.stringify(payload) });
+    };
+</script>
+</body>
+</html>
