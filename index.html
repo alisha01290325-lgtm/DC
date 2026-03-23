@@ -3,51 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AI DC 智慧形象大師 V27 - 終極旗艦版</title>
+    <title>AI DC 智慧美學系統 V30 - 終極旗艦版</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --p: #d8b4fe; --txt: #333; --bg: #fdfbff; --card: #ffffff; --gray: #f2f2f7; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; overflow-x: hidden; }
-        .app-container { max-width: 500px; margin: auto; min-height: 100vh; background: white; box-shadow: 0 0 30px rgba(0,0,0,0.05); }
+        :root { --p: #d8b4fe; --m: #818cf8; --cur: var(--p); --txt: #333; --bg: #fdfbff; --card: #ffffff; --gray: #f2f2f7; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; overflow-x: hidden; }
+        .app-container { max-width: 500px; margin: auto; min-height: 100vh; background: white; box-shadow: 0 0 40px rgba(0,0,0,0.05); }
+        
         .page { display: none; padding: 20px; animation: fadeIn 0.4s ease; box-sizing: border-box; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 相機與 AR 面網 */
+        /* 相機預覽區域 */
         .v-frame { width: 95%; margin: 15px auto; border-radius: 40px; overflow: hidden; border: 8px solid white; box-shadow: 0 15px 40px rgba(0,0,0,0.08); position: relative; background: #000; }
         video { width: 100%; transform: scaleX(-1); display: block; border-radius: 32px; }
         canvas.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
 
-        /* 導航分頁 */
-        .nav-tabs { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; scrollbar-width: none; margin-bottom: 15px; }
-        .tab { flex: 0 0 auto; padding: 10px 20px; border-radius: 20px; background: var(--gray); border: none; font-size: 0.85em; font-weight: bold; color: #888; cursor: pointer; }
-        .tab.active { background: var(--p); color: white; }
+        /* 導航分頁與按鈕 */
+        .nav-tabs { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; scrollbar-width: none; }
+        .tab { flex: 0 0 auto; padding: 10px 22px; border-radius: 20px; background: var(--gray); border: none; font-size: 0.85em; font-weight: bold; color: #888; cursor: pointer; }
+        .tab.active { background: var(--cur); color: white; }
 
-        /* 卡片元件 */
-        .card { background: white; border-radius: 30px; padding: 22px; margin-bottom: 18px; border: 1px solid #f0f0f0; box-shadow: 0 10px 25px rgba(0,0,0,0.02); }
-        .card h3 { font-size: 1.05em; display: flex; align-items: center; gap: 10px; margin-top: 0; color: var(--p); }
+        /* 卡片設計 */
+        .card { background: white; border-radius: 30px; padding: 25px; margin-bottom: 20px; border: 1px solid #f0f0f0; box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
+        .card h3 { font-size: 1.1em; display: flex; align-items: center; gap: 10px; margin-top: 0; color: var(--cur); }
 
-        /* 數據拉桿 (FaceTag) */
-        .m-bar { height: 6px; background: #eee; border-radius: 10px; position: relative; margin: 12px 0; }
-        .m-ptr { position: absolute; top: -5px; width: 16px; height: 16px; background: var(--p); border: 3px solid white; border-radius: 50%; transition: 0.8s; }
+        /* 五官比例數據尺 */
+        .m-bar-box { margin-bottom: 15px; }
+        .m-bar { height: 6px; background: #eee; border-radius: 10px; position: relative; margin: 10px 0; }
+        .m-ptr { position: absolute; top: -5px; width: 16px; height: 16px; background: var(--cur); border: 3px solid white; border-radius: 50%; transition: 0.8s; }
 
-        /* 色盤視覺化 (酵色) */
-        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        /* 個人色彩網格 */
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+        .swatch-box { text-align: center; }
         .swatch { aspect-ratio: 1; border-radius: 12px; border: 2px solid white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .swatch-box span { font-size: 0.65em; color: #999; margin-top: 5px; display: block; }
 
         /* AR 控制鈕 */
-        .ar-btn { background: white; border: 1px solid var(--p); color: var(--p); padding: 8px 15px; border-radius: 20px; font-size: 0.75em; font-weight: bold; cursor: pointer; }
-        .ar-btn.active { background: var(--p); color: white; }
+        .ar-btn { background: white; border: 1px solid var(--cur); color: var(--cur); padding: 8px 15px; border-radius: 20px; font-size: 0.75em; font-weight: bold; cursor: pointer; }
+        .ar-btn.active { background: var(--cur); color: white; }
 
-        /* 動態教學 SVG */
+        /* 教學 SVG */
         .diag-svg { width: 100%; background: #fafafa; border-radius: 20px; margin: 15px 0; }
-        .step-txt { border-left: 3px solid var(--p); padding-left: 12px; font-size: 0.88em; line-height: 1.6; margin: 10px 0; }
+        .step-txt { border-left: 3px solid var(--cur); padding-left: 12px; font-size: 0.88em; line-height: 1.6; margin: 12px 0; color: #555; }
 
-        .btn-main { width: 90%; height: 55px; background: var(--p); color: white; border-radius: 30px; border: none; font-weight: bold; font-size: 1.1em; cursor: pointer; display: block; margin: 20px auto; }
+        .btn-main { width: 90%; height: 55px; background: var(--cur); color: white; border-radius: 30px; border: none; font-weight: bold; font-size: 1.1em; cursor: pointer; display: block; margin: 20px auto; }
     </style>
 </head>
 <body>
@@ -56,8 +60,8 @@
 
     <div id="p1" class="page active">
         <div style="text-align: center; margin-top: 20px;">
-            <div style="color: var(--p); letter-spacing: 5px; font-size: 0.8em; font-weight: bold;">AESTHETIC AI MASTER</div>
-            <h2 style="font-weight: 300; margin: 5px 0;">478 點位深度診斷</h2>
+            <div style="color: var(--cur); letter-spacing: 5px; font-size: 0.8em; font-weight: bold;" id="app-tag">AESTHETIC AI MASTER</div>
+            <h2 style="font-weight: 300; margin: 5px 0;" id="app-title">AI 雙模美學診斷</h2>
         </div>
 
         <div class="v-frame">
@@ -66,71 +70,76 @@
         </div>
 
         <div style="display:flex; justify-content:center; gap:10px; margin: 10px 0;">
-            <button id="ar-lip" class="ar-btn" onclick="toggleAR('lip')"><i class="fa-solid fa-lips"></i> AR 試唇色</button>
-            <button id="ar-blush" class="ar-btn" onclick="toggleAR('blush')"><i class="fa-solid fa-brush"></i> AR 修容引導</button>
+            <button id="ar-lip" class="ar-btn" onclick="toggleAR('lip')">AR 虛擬試色</button>
+            <button id="ar-mesh" class="ar-btn active" onclick="toggleAR('mesh')">478 點位面網</button>
         </div>
 
-        <button class="btn-main" onclick="goToReport()">生成全方位美學報告</button>
+        <div style="display:flex; justify-content:center; gap:12px; margin-top: 20px;">
+            <button class="tab active" style="width:140px;" id="btn-f" onclick="switchMode('f')">女士美學</button>
+            <button class="tab" style="width:140px;" id="btn-m" onclick="switchMode('m')">男士理容</button>
+        </div>
+
+        <button class="btn-main" onclick="runAnalysis()">開始深度美學診斷</button>
     </div>
 
     <div id="p2" class="page">
-        <div style="text-align: center; margin-bottom: 15px;">
-            <div style="font-size: 2.2em; font-weight: bold; color: var(--p);">92</div>
-            <h2 id="res-face">楕圓面 | 暖色調</h2>
-            <p style="color: #bbb; font-size: 0.8em;">#新鮮型 | #比例均勻 | #2WG</p>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 2.2em; font-weight: bold; color: var(--cur);">92</div>
+            <h2 id="res-face">橢圓面 | 暖色調</h2>
+            <p style="color: #bbb; font-size: 0.8em;" id="res-id">#2WG | #24型: 暖秋 | #新鮮型</p>
         </div>
 
         <div class="nav-tabs">
-            <button class="tab active" onclick="showM('m-data')">📊 比例</button>
-            <button class="tab" onclick="showM('m-color')">🎨 色彩</button>
-            <button class="tab" onclick="showM('m-tut')">💄 妝容</button>
-            <button class="tab" onclick="showM('m-skin')">🧖 皮膚</button>
+            <button class="tab active" onclick="showM('m-color')">🎨 色彩鑑定</button>
+            <button class="tab" onclick="showM('m-data')">📊 比例數據</button>
+            <button class="tab" onclick="showM('m-tut')">💄 妝容導師</button>
+            <button class="tab" onclick="showM('m-skin')">🧖 皮膚科學</button>
         </div>
 
-        <div id="m-data" class="module">
+        <div id="m-color" class="module">
             <div class="card">
-                <h3><i class="fa-solid fa-ruler-combined"></i> 三庭五眼數據儀表板</h3>
-                <p style="font-size:0.75em; color:#888;">中庭比例佔比 (三庭)</p>
-                <div class="m-bar"><div class="m-ptr" style="left: 62%;"></div></div>
-                <p style="font-size:0.75em; color:#888; margin-top:15px;">眼間距佔比 (五眼)</p>
-                <div class="m-bar"><div class="m-ptr" style="left: 75%;"></div></div>
+                <h3><i class="fa-solid fa-swatchbook"></i> 您的本命 24 型色盤</h3>
+                <p style="font-size: 0.8em; color: #888;">根據像素取樣，您屬於「秋季-暖秋」。適合高彩度、帶暖大地感的色彩。</p>
+                <div class="color-grid" id="main-palette">
+                    </div>
+                <p class="step-txt"><b>色彩提示：</b>左一色塊即為您的「命定正紅」，點擊可回頂部 AR 試色。</p>
             </div>
         </div>
 
-        <div id="m-color" class="module" style="display:none;">
+        <div id="m-data" class="module" style="display:none;">
             <div class="card">
-                <h3><i class="fa-solid fa-palette"></i> 適合您的「本命正紅」</h3>
-                <div class="color-grid">
-                    <div class="swatch" style="background: #b91c1c;" onclick="arColor('#b91c1c')"></div>
-                    <div class="swatch" style="background: #ea580c;" onclick="arColor('#ea580c')"></div>
-                    <div class="swatch" style="background: #9a3412;" onclick="arColor('#9a3412')"></div>
-                    <div class="swatch" style="background: #7c2d12;" onclick="arColor('#7c2d12')"></div>
+                <h3><i class="fa-solid fa-ruler-combined"></i> 三庭五眼數據偵測</h3>
+                <div class="m-bar-box">
+                    <div style="display:flex; justify-content:space-between; font-size:0.75em;"><span>中庭佔比 (三庭)</span><span>標準</span></div>
+                    <div class="m-bar"><div class="m-ptr" style="left: 65%;"></div></div>
                 </div>
-                <p style="font-size:0.8em; color:#888; margin-top:10px;">點擊色塊，回到上方 AR 鏡即可實時試妝。</p>
+                <div class="m-bar-box">
+                    <div style="display:flex; justify-content:space-between; font-size:0.75em;"><span>眼間距比例 (五眼)</span><span>寬距</span></div>
+                    <div class="m-bar"><div class="m-ptr" style="left: 75%;"></div></div>
+                </div>
             </div>
         </div>
 
         <div id="m-tut" class="module" style="display:none;">
-            <div class="nav-tabs" style="background:none; border:none;">
-                <button class="tab active" style="font-size:0.7em;" onclick="setS('elegant')">精緻氣質</button>
-                <button class="tab" style="font-size:0.7em;" onclick="setS('kpop')">韓系水光</button>
-                <button class="tab" style="font-size:0.7em;" onclick="setS('western')">歐美立體</button>
+            <div class="nav-tabs" style="background:none;">
+                <button class="tab active" id="s0" onclick="setS(0)">風格 1</button>
+                <button class="tab" id="s1" onclick="setS(1)">風格 2</button>
+                <button class="tab" id="s2" onclick="setS(2)">風格 3</button>
             </div>
             <div class="card">
                 <div class="diag-svg">
                     <svg id="svg-tut" viewBox="0 0 100 60">
                         <path id="path-brow" d="M 35 25 Q 45 15 55 25" stroke="#444" fill="none" stroke-width="2" stroke-linecap="round"/>
-                        <path id="path-shadow" d="M 32 35 Q 42 25 52 35" fill="#d4a373" opacity="0.4"/>
-                        <text x="50" y="55" font-size="3" text-anchor="middle" fill="#ccc">動態變美施工地圖</text>
+                        <path id="path-guide" d="M 32 35 Q 42 25 52 35" fill="#d4a373" opacity="0.4"/>
                     </svg>
                 </div>
-                <div id="tut-txt" class="step-txt"><b>眉毛：</b>對齊點位，畫出俐落挑眉。</div>
+                <div id="tut-txt" class="step-txt">正在載入教學...</div>
             </div>
         </div>
 
         <div id="m-skin" class="module" style="display:none;">
             <div class="card">
-                <h3><i class="fa-solid fa-virus"></i> 皮膚科學分析雷達</h3>
+                <h3><i class="fa-solid fa-virus"></i> 皮膚分析雷達</h3>
                 <canvas id="skinChart" style="max-width: 250px; margin: auto;"></canvas>
             </div>
         </div>
@@ -143,11 +152,29 @@
 <script type="module">
     import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js";
 
-    let faceL;
-    let v = document.getElementById("v");
-    let c = document.getElementById("mesh-canvas");
-    let ctx = c.getContext("2d");
-    let arState = { lip: false, blush: false, color: '#b91c1c' };
+    let faceL, v = document.getElementById("v"), c = document.getElementById("mesh-canvas"), ctx = c.getContext("2d");
+    let mode = 'f', ar = { lip: false, mesh: true, color: '#b91c1c' };
+
+    const CONFIG = {
+        f: {
+            title: "女士美學", color: "#d8b4fe",
+            styles: [
+                { n: "精緻氣質", b: "M 35 25 Q 45 15 55 25", t: "<b>眉毛：</b>畫出明顯眉峰增加知性度。<br><b>眼影：</b>大地消腫色鋪色。" },
+                { n: "韓系水光", b: "M 35 25 Q 45 25 55 25", t: "<b>眉毛：</b>平直霧感眉。<br><b>提亮：</b>面中與臥蠶點亮。" },
+                { n: "歐美立體", b: "M 35 20 Q 45 5 55 20", t: "<b>眉毛：</b>高挑峰利眉。<br><b>修容：</b>加強顴骨陰影。" }
+            ],
+            palette: ["#b91c1c", "#ea580c", "#9a3412", "#7c2d12", "#fbcfe8", "#cbd5e1", "#a16207", "#3f6212"]
+        },
+        m: {
+            title: "男士理容", color: "#818cf8",
+            styles: [
+                { n: "商務精英", b: "M 35 22 Q 45 18 55 22", t: "<b>眉型：</b>劍眉感理容，保持整齊。<br><b>鬍鬚：</b>建議淨剃，呈現專業感。" },
+                { n: "韓系歐巴", b: "M 35 25 Q 45 25 55 25", t: "<b>眉型：</b>平直平眉。<br><b>髮型：</b>強調瀏海層次。" },
+                { n: "陽剛硬派", b: "M 35 20 Q 45 20 55 20", t: "<b>眉型：</b>粗獷自然眉。<br><b>修容：</b>強調下顎線輪廓。" }
+            ],
+            palette: ["#333333", "#4b5563", "#1e293b", "#374151", "#71717a", "#18181b", "#52525b", "#27272a"]
+        }
+    };
 
     async function init() {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
@@ -161,72 +188,73 @@
     }
     init();
 
-    // 核心渲染：478點網格 + AR 試妝
     async function loop() {
         c.width = v.videoWidth; c.height = v.videoHeight;
         const res = await faceL.detectForVideo(v, performance.now());
         ctx.clearRect(0, 0, c.width, c.height);
-        
         if (res.faceLandmarks && res.faceLandmarks[0]) {
             const lm = res.faceLandmarks[0];
-            
-            // 1. 478 點位微光面網 (極致專業感)
-            ctx.fillStyle = "rgba(216, 180, 254, 0.4)";
-            lm.forEach((p, i) => { if(i%2==0) ctx.fillRect(p.x * c.width, p.y * c.height, 1, 1); });
-
-            // 2. AR 唇膏
-            if (arState.lip) {
+            // 1. 視覺化 478 點位 Mesh
+            if(ar.mesh) {
+                ctx.fillStyle = mode === 'f' ? "rgba(216, 180, 254, 0.4)" : "rgba(129, 140, 248, 0.4)";
+                lm.forEach((p, i) => { if(i%3==0) ctx.fillRect(p.x * c.width, p.y * c.height, 1, 1); });
+            }
+            // 2. AR 試色
+            if(ar.lip && mode === 'f') {
                 const lipIdx = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 80, 191, 78, 62, 76];
                 ctx.beginPath(); ctx.moveTo(lm[61].x*c.width, lm[61].y*c.height);
                 lipIdx.forEach(i => ctx.lineTo(lm[i].x*c.width, lm[i].y*c.height));
-                ctx.closePath(); ctx.fillStyle = arState.color + "77"; ctx.fill();
-            }
-            
-            // 3. AR 腮紅
-            if (arState.blush) {
-                ctx.fillStyle = "rgba(216, 180, 254, 0.25)";
-                ctx.beginPath(); ctx.arc(lm[234].x*c.width, lm[234].y*c.height, 25, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(lm[454].x*c.width, lm[454].y*c.height, 25, 0, Math.PI*2); ctx.fill();
+                ctx.closePath(); ctx.fillStyle = ar.color + "88"; ctx.fill();
             }
         }
         requestAnimationFrame(loop);
     }
 
-    window.goToReport = () => {
-        document.getElementById("p1").classList.remove("active");
-        document.getElementById("p2").classList.add("active");
-        initChart();
+    window.switchMode = (m) => {
+        mode = m;
+        const d = CONFIG[m];
+        document.documentElement.style.setProperty('--cur', d.color);
+        document.getElementById('app-tag').innerText = `AESTHETIC AI ${m==='f'?'LADIES':'GENTLEMEN'}`;
+        document.getElementById('btn-f').classList.toggle('active', m==='f');
+        document.getElementById('btn-m').classList.toggle('active', m==='m');
+        
+        let paletteHtml = "";
+        d.palette.forEach(color => {
+            paletteHtml += `<div class="swatch-box"><div class="swatch" style="background:${color}" onclick="setAR('${color}')"></div><span>色號代碼</span></div>`;
+        });
+        document.getElementById('main-palette').innerHTML = paletteHtml;
+        
+        d.styles.forEach((s, i) => { document.getElementById(`s${i}`).innerText = s.n; });
+        setS(0);
     };
+
+    window.setS = (idx) => {
+        const s = CONFIG[mode].styles[idx];
+        document.getElementById('path-brow').setAttribute('d', s.b);
+        document.getElementById('tut-txt').innerHTML = s.t;
+        document.querySelectorAll('#m-tut .tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+    };
+
+    window.toggleAR = (t) => {
+        if(t === 'lip') ar.lip = !ar.lip;
+        if(t === 'mesh') ar.mesh = !ar.mesh;
+        document.getElementById(`ar-${t}`).classList.toggle('active');
+    };
+
+    window.setAR = (c) => { ar.color = c; ar.lip = true; document.getElementById('ar-lip').classList.add('active'); document.getElementById('p2').classList.remove('active'); document.getElementById('p1').classList.add('active'); };
+    window.runAnalysis = () => { document.getElementById('p1').classList.remove('active'); document.getElementById('p2').classList.add('active'); initChart(); };
+    window.showM = (id) => { document.querySelectorAll('.module').forEach(m => m.style.display='none'); document.querySelectorAll('#p2 .tab').forEach(t => t.classList.remove('active')); document.getElementById(id).style.display='block'; event.currentTarget.classList.add('active'); };
 
     function initChart() {
         new Chart(document.getElementById('skinChart'), {
             type: 'radar',
-            data: {
-                labels: ['肌齡', '細膩', '控油', '勻淨', '耐受'],
-                datasets: [{ data: [8, 9, 7, 8, 9], backgroundColor: 'rgba(216, 180, 254, 0.4)', borderColor: '#d8b4fe', pointRadius: 0 }]
-            },
+            data: { labels: ['肌齡', '細膩', '控油', '勻淨', '耐受'], datasets: [{ data: [8, 9, 7, 8, 9], backgroundColor: mode==='f'?'rgba(216, 180, 254, 0.3)':'rgba(129, 140, 248, 0.3)', borderColor: varProp('--cur'), pointRadius: 0 }] },
             options: { scales: { r: { min: 0, max: 10, ticks: { display: false } } }, plugins: { legend: { display: false } } }
         });
     }
+    function varProp(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
-    window.toggleAR = (t) => {
-        arState[t] = !arState[t];
-        document.getElementById(`ar-${t}`).classList.toggle('active');
-    };
-
-    window.arColor = (c) => {
-        arState.color = c; arState.lip = true;
-        document.getElementById('ar-lip').classList.add('active');
-        document.getElementById("p2").classList.remove("active");
-        document.getElementById("p1").classList.add("active");
-    };
-
-    window.showM = (id) => {
-        document.querySelectorAll(".module").forEach(m => m.style.display = "none");
-        document.querySelectorAll(".nav-tabs .tab").forEach(t => t.classList.remove("active"));
-        document.getElementById(id).style.display = "block";
-        event.currentTarget.classList.add("active");
-    };
+    switchMode('f');
 </script>
 </body>
 </html>
