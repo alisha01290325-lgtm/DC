@@ -3,145 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI DC 智慧形象大師 V21 - 實戰教學版</title>
+    <title>AI DC 智慧美學全方位導航 V26</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --p: #d8b4fe; --txt: #222; --bg: #f9f9fb; --card: #ffffff; --gray: #f2f2f2; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        :root { --p: #d8b4fe; --txt: #333; --bg: #fdfbff; --card: #ffffff; --acc: #f3e8ff; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; }
         
-        .app-container { max-width: 500px; margin: auto; min-height: 100vh; display: flex; flex-direction: column; }
-        .page { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
+        /* 介面框架 */
+        .page { display: none; padding: 15px; max-width: 500px; margin: auto; animation: fadeIn 0.4s; padding-bottom: 120px; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- 頂部標題與數據 --- */
-        .header-section { text-align: center; margin: 20px 0; }
-        .score-display { font-size: 3em; font-weight: bold; color: var(--p); margin: 10px 0; }
-        .tag-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
-        .tag { background: #eee; padding: 4px 12px; border-radius: 15px; font-size: 0.75em; color: #888; }
+        .glass-card { background: var(--card); border-radius: 35px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f0f0f0; }
+        .tab-scroll { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; scrollbar-width: none; }
+        .tab { flex: 0 0 auto; padding: 10px 22px; border-radius: 20px; background: white; border: 1px solid #eee; cursor: pointer; font-size: 0.85em; transition: 0.3s; }
+        .tab.active { background: var(--p); color: white; border-color: var(--p); }
 
-        /* --- 橫向導航按鈕 --- */
-        .nav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
-        .nav-item { background: white; border: 1px solid #f0f0f0; padding: 12px 5px; border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-        .nav-item i { display: block; font-size: 1.2em; margin-bottom: 5px; color: #ccc; }
-        .nav-item.active { background: var(--p); border-color: var(--p); }
-        .nav-item.active i, .nav-item.active span { color: white; }
-        .nav-item span { font-size: 0.8em; font-weight: bold; color: #666; }
+        /* AR 實境容器 */
+        #ar_box { position: relative; width: 100%; aspect-ratio: 0.8; border-radius: 40px; overflow: hidden; border: 8px solid white; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        video, canvas { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        /* --- 主教學卡片 --- */
-        .master-card { background: white; border-radius: 35px; padding: 25px; box-shadow: 0 15px 45px rgba(0,0,0,0.05); }
-        .card-title { font-size: 1.1em; font-weight: bold; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        
-        /* 真實圖片容器 */
-        .real-photo-box { width: 100%; border-radius: 25px; overflow: hidden; background: var(--gray); margin-bottom: 20px; position: relative; }
-        .real-photo-box img { width: 100%; height: auto; display: block; object-fit: cover; }
-        .img-overlay { position: absolute; bottom: 0; width: 100%; padding: 15px; background: rgba(255,255,255,0.9); font-size: 0.85em; box-sizing: border-box; }
+        /* 數據比例尺 */
+        .m-row { margin-bottom: 15px; }
+        .m-bar { width: 100%; height: 6px; background: #f0f0f0; border-radius: 10px; position: relative; margin: 8px 0; }
+        .m-ptr { position: absolute; top: -5px; width: 16px; height: 16px; background: var(--p); border: 3px solid white; border-radius: 50%; transform: translateX(-50%); transition: 0.7s; }
 
-        /* 數據比例尺 (FaceTag Style) */
-        .metric-item { margin-bottom: 20px; }
-        .metric-label { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 8px; font-weight: bold; }
-        .bar-track { width: 100%; height: 6px; background: #eee; border-radius: 10px; position: relative; }
-        .bar-fill { position: absolute; height: 100%; background: var(--p); border-radius: 10px; transition: 1s; }
-        .bar-pointer { position: absolute; top: -5px; width: 16px; height: 16px; background: var(--p); border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transform: translateX(-50%); }
+        /* 真實圖展示 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .img-card { background: #f9f9f9; border-radius: 20px; overflow: hidden; text-align: center; border: 1px solid #f0f0f0; }
+        .img-card img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+        .img-label { padding: 8px; font-size: 0.8em; font-weight: bold; }
 
-        /* 色盤網格 */
-        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        /* 色盤 */
+        .color-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
         .swatch { aspect-ratio: 1; border-radius: 12px; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
-        /* 相機預覽 */
-        #cam_view { width: 100%; aspect-ratio: 0.85; border-radius: 40px; overflow: hidden; background: #000; border: 10px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-
-        .btn-footer { width: 90%; max-width: 320px; padding: 18px; border-radius: 35px; background: var(--gray); color: #666; border: none; font-weight: bold; font-size: 1.1em; cursor: pointer; margin: 30px auto; display: block; }
+        .btn-main { width: 90%; max-width: 320px; height: 60px; background: var(--p); color: white; border-radius: 35px; border: none; font-size: 1.1em; font-weight: bold; cursor: pointer; display: block; margin: 20px auto; }
+        .instruction { font-size: 0.85em; line-height: 1.7; color: #555; padding-left: 12px; border-left: 3px solid var(--p); margin: 15px 0; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div id="p_start" class="page active">
+    <div style="text-align: center; margin-top: 30px;">
+        <h1 style="font-weight: 300; letter-spacing: 5px;">AESTHETIC AI</h1>
+        <p style="opacity: 0.4; font-size: 0.85em;">解碼您的臉型與本命色彩</p>
+    </div>
+    <div id="ar_box">
+        <video id="v" autoplay playsinline></video>
+        <canvas id="c_ar"></canvas>
+    </div>
+    <div style="display:flex; justify-content:center; gap:15px; margin- 25px 0;">
+        <button class="tab active" onclick="setG('f')">女士美學</button>
+        <button class="tab" onclick="setG('m')">男士理容</button>
+    </div>
+    <button class="btn-main" onclick="runAnalysis()">開始深度診斷</button>
+</div>
 
-    <div id="page_start" class="page active">
-        <div class="header-section">
-            <h1 style="letter-spacing: 5px; font-weight: 300;">AESTHETIC AI</h1>
-        </div>
-        <div id="cam_view">
-            <video id="v" autoplay playsinline></video>
-        </div>
-        <div style="display:flex; justify-content:center; gap:15px; margin: 30px 0;">
-            <div class="nav-item active" style="width:100px;" onclick="setG('female', this)">
-                <i class="fa-solid fa-venus"></i><span>女士美學</span>
-            </div>
-            <div class="nav-item" style="width:100px;" onclick="setG('male', this)">
-                <i class="fa-solid fa-mars"></i><span>男士理容</span>
-            </div>
-        </div>
-        <button class="btn-footer" style="background:var(--p); color:white;" onclick="runDiagnosis()">開始深度分析</button>
+<div id="p_res" class="page">
+    <div style="text-align: center; margin-bottom: 25px;">
+        <h2 id="res_face">正在分析中...</h2>
+        <div style="padding: 5px 15px; background: var(--acc); border-radius: 20px; font-size: 0.8em; font-weight: bold; display: inline-block;">膚色 ID: 2WG (暖調二白)</div>
     </div>
 
-    <div id="page_result" class="page">
-        <div class="header-section">
-            <div style="font-size: 1.5em; font-weight: bold;">橢圓面 | 暖色調</div>
-            <div class="score-display">92</div>
-            <div class="tag-row">
-                <span class="tag">#新鮮型</span><span class="tag">#比例均勻</span><span class="tag">#2WG 膚色</span>
-            </div>
-        </div>
-
-        <div class="nav-grid">
-            <div class="nav-item active" onclick="showModule('data', this)"><i class="fa-solid fa-ruler"></i><span>五官數據</span></div>
-            <div class="nav-item" onclick="showModule('color', this)"><i class="fa-solid fa-palette"></i><span>本命色彩</span></div>
-            <div class="nav-item" onclick="showModule('teach', this)"><i class="fa-solid fa-lipstick"></i><span>教學圖譜</span></div>
-        </div>
-
-        <div class="master-card">
-            
-            <div id="mod_data" class="module">
-                <div class="card-title"><i class="fa-solid fa-chart-bar"></i> 深度比例分析</div>
-                <div class="metric-item">
-                    <div class="metric-label"><span>眼睛寬度 / 臉寬</span><span>72%</span></div>
-                    <div class="bar-track">
-                        <div class="bar-fill" style="width: 72%;"></div>
-                        <div class="bar-pointer" style="left: 72%;"></div>
-                    </div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label"><span>人中長度 / 下臉</span><span>80%</span></div>
-                    <div class="bar-track">
-                        <div class="bar-fill" style="width: 80%;"></div>
-                        <div class="bar-pointer" style="left: 80%;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="mod_color" class="module" style="display:none;">
-                <div class="card-title"><i class="fa-solid fa-palette"></i> 適合您的「命定正紅」</div>
-                <div class="real-photo-box">
-                    <img src="https://images.unsplash.com/photo-1586771107445-d3ca888129ff?q=80&w=500" alt="正紅口紅示範">
-                    <div class="img-overlay"><b>真實示範：</b>高飽和度紅能瞬間提亮暖色肌膚。</div>
-                </div>
-                <div class="color-grid">
-                    <div class="swatch" style="background: #b91c1c;"></div> <div class="swatch" style="background: #ea580c;"></div> <div class="swatch" style="background: #9a3412;"></div> <div class="swatch" style="background: #7c2d12;"></div> </div>
-            </div>
-
-            <div id="mod_teach" class="module" style="display:none;">
-                <div class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> 手把手變美思路</div>
-                <div class="real-photo-box">
-                    <img src="https://images.unsplash.com/photo-1522338140262-f46f5513243a?q=80&w=500" alt="眉毛教學圖">
-                    <div class="img-overlay"><b>眉毛畫法：</b>針對橢圓臉，畫出微挑弧度，中和圓潤感。</div>
-                </div>
-                <div class="real-photo-box">
-                    <img src="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=500" alt="修容教學圖">
-                    <div class="img-overlay"><b>修容重點：</b>從顴骨最高點斜拉，視覺收縮面中區域。</div>
-                </div>
-            </div>
-
-        </div>
-
-        <button class="btn-footer" onclick="location.reload()">重新檢測</button>
+    <div class="tab-scroll">
+        <div class="tab active" onclick="showM('mod_skin')">🧖 皮膚總表</div>
+        <div class="tab" onclick="showM('mod_data')">📊 五官數據</div>
+        <div class="tab" onclick="showM('mod_color')">🎨 匹配產品</div>
+        <div class="tab" onclick="showM('mod_ar')">💄 AR 實境妝教</div>
+        <div class="tab" onclick="showM('mod_style')">🧥 穿搭髮色</div>
     </div>
 
+    <div id="mod_skin" class="module">
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-virus"></i> 真人皮膚狀態總結</h3>
+            <canvas id="skinRadar" style="max-width: 250px; margin: auto;"></canvas>
+            <div class="instruction" style="margin-top:20px;">
+                <b>診斷報告：</b>您的皮膚緊緻度高，但局部水分流失快。建議使用含「神經醯胺」之護膚品，強化受損屏障。
+            </div>
+        </div>
+    </div>
+
+    <div id="mod_data" class="module" style="display:none;">
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-ruler-combined"></i> 深度比例數據</h3>
+            <div class="m-row">
+                <div style="display:flex; justify-content:space-between; font-size:0.85em;"><span>眼寬比 / 臉寬</span><span>72%</span></div>
+                <div class="m-bar"><div class="m-ptr" id="ptr_eye" style="left: 72%;"></div></div>
+            </div>
+            <div class="m-row">
+                <div style="display:flex; justify-content:space-between; font-size:0.85em;"><span>人中長度 / 下臉</span><span>80%</span></div>
+                <div class="m-bar"><div class="m-ptr" id="ptr_lip" style="left: 80%;"></div></div>
+            </div>
+            <div class="instruction" id="data_adv">您的臉型偏向新鮮型，比例均勻。</div>
+        </div>
+    </div>
+
+    <div id="mod_color" class="module" style="display:none;">
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-palette"></i> 本命正紅與匹配產品</h3>
+            <div class="img-card" style="aspect-ratio: 1.6; margin-bottom: 15px;">
+                <img src="https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=500" alt="True Red">
+                <div class="img-label">本命正紅：暖調高飽和</div>
+            </div>
+            <div class="grid-2">
+                <div class="img-card"><img src="https://images.unsplash.com/photo-1596462502278-27bfad450516?w=300"><div class="img-label">推薦色盤</div></div>
+                <div class="img-card"><img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300"><div class="img-label">推薦唇彩</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mod_ar" class="module" style="display:none;">
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-wand-magic-sparkles"></i> 掃描掃描並照著畫</h3>
+            <div class="instruction">
+                <b>操作指引：</b>下方選擇風格後，螢幕紫色虛線會對齊妳的五官。請拿著筆對準虛線位置繪製。
+            </div>
+            <div class="tab-scroll">
+                <button class="tab active" onclick="setAR('thin')">精緻細眉</button>
+                <button class="tab" onclick="setAR('arch')">氣質挑眉</button>
+                <button class="tab" onclick="setAR('eyeliner')">眼線導航</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mod_style" class="module" style="display:none;">
+        <div class="glass-card">
+            <h3><i class="fa-solid fa-shirt"></i> 適合您的穿搭髮色</h3>
+            <div class="grid-2">
+                <div class="img-card">
+                    <img id="img_hair" src="https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=500">
+                    <div class="img-label" id="lbl_hair">髮色：巧克力棕</div>
+                </div>
+                <div class="img-card">
+                    <img id="img_outfit" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=500">
+                    <div class="img-label" id="lbl_outfit">風格：法式氣質</div>
+                </div>
+            </div>
+            <div class="instruction" id="style_adv">建議選用巧克力棕增加皮膚透明感。穿搭推薦 V 領，可拉長頸部線條。</div>
+        </div>
+    </div>
+
+    <button class="btn-main" onclick="location.reload()">重新檢測</button>
 </div>
 
 <script type="module">
@@ -149,42 +156,102 @@
 
     let faceL;
     let video = document.getElementById("v");
+    let canvas = document.getElementById("c_ar");
+    let ctx = canvas.getContext("2d");
+    let arMode = 'thin';
+
+    // --- 臉型配置資料庫：聯動變化核心 ---
+    const FACE_CONFIGS = {
+        oval: { shape: "鵝蛋臉 | 均衡型", brow: -0.01, hair: "巧克力棕", outfit: "法式氣質", outfitImg: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=500" },
+        long: { shape: "長型臉 | 氣質型", brow: 0, hair: "冷檀棕", outfit: "一字領穿搭", outfitImg: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=500" },
+        round: { shape: "圓型臉 | 活力型", brow: -0.02, hair: "蜜茶色", outfit: "深 V 領剪裁", outfitImg: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500" }
+    };
 
     async function init() {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
         video.srcObject = stream;
         const fileset = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
         faceL = await FaceLandmarker.createFromOptions(fileset, {
             baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" },
-            runningMode: "IMAGE"
+            runningMode: "VIDEO"
         });
+        renderLoop();
     }
     init();
 
-    window.runDiagnosis = async () => {
-        const c = document.createElement("canvas");
-        c.width = video.videoWidth; c.height = video.videoHeight;
-        c.getContext("2d").drawImage(video, 0, 0);
-        const res = await faceL.detect(c);
-        if (res.faceLandmarks.length > 0) {
-            document.getElementById("page_start").classList.remove("active");
-            document.getElementById("page_result").classList.add("active");
+    async function renderLoop() {
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        const res = await faceL.detectForVideo(video, performance.now());
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (res.faceLandmarks && res.faceLandmarks.length > 0) {
+            drawAROverlay(res.faceLandmarks[0]);
         }
+        requestAnimationFrame(renderLoop);
+    }
+
+    function drawAROverlay(lm) {
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "rgba(216, 180, 254, 0.9)";
+        ctx.lineWidth = 4;
+        if (arMode === 'thin' || arMode === 'arch') {
+            const offset = arMode === 'arch' ? -0.02 : -0.01;
+            drawPath([70, 63, 105, 66, 107], lm, offset); // 眉毛引導
+        } else if (arMode === 'eyeliner') {
+            drawPath([130, 243], lm, 0); // 眼線平拉
+        }
+    }
+
+    function drawPath(indices, lm, offset) {
+        ctx.beginPath();
+        indices.forEach((idx, i) => {
+            const x = lm[idx].x * canvas.width;
+            const y = (lm[idx].y + offset) * canvas.height;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    window.runAnalysis = () => {
+        // 模擬自動判定為長型臉 (可根據實際數據 whRatio 切換)
+        const config = FACE_CONFIGS.long;
+        document.getElementById("res_face").innerText = config.shape;
+        document.getElementById("lbl_hair").innerText = "髮色：" + config.hair;
+        document.getElementById("lbl_outfit").innerText = "風格：" + config.outfit;
+        document.getElementById("img_outfit").src = config.outfitImg;
+
+        document.getElementById("p_start").classList.remove("active");
+        document.getElementById("p_res").classList.add("active");
+        initRadar();
     };
 
-    window.showModule = (mod, btn) => {
+    function initRadar() {
+        const r_ctx = document.getElementById('skinRadar').getContext('2d');
+        new Chart(r_ctx, {
+            type: 'radar',
+            data: {
+                labels: ['健康度', '細膩度', '勻淨度', '耐受性', '年輕度', '控油性'],
+                datasets: [{
+                    data: [8.5, 9.2, 7.8, 6.5, 9.5, 7.0],
+                    backgroundColor: 'rgba(216, 180, 254, 0.4)',
+                    borderColor: '#d8b4fe'
+                }]
+            },
+            options: { scales: { r: { min: 0, max: 10, ticks: { display: false } } }, plugins: { legend: { display: false } } }
+        });
+    }
+
+    window.showM = (id) => {
         document.querySelectorAll(".module").forEach(m => m.style.display = "none");
-        document.querySelectorAll(".nav-grid .nav-item").forEach(t => t.classList.remove("active"));
-        document.getElementById(`mod_${mod}`).style.display = "block";
-        btn.classList.add("active");
+        document.querySelectorAll(".tab-scroll .tab").forEach(t => t.classList.remove("active"));
+        document.getElementById(id).style.display = "block";
+        event.currentTarget.classList.add("active");
     };
 
-    window.setG = (g, btn) => {
-        document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
-        btn.classList.add("active");
-        document.documentElement.style.setProperty('--p', g === 'male' ? '#818cf8' : '#d8b4fe');
+    window.setAR = (mode) => {
+        arMode = mode;
+        document.querySelectorAll('#mod_ar .tab').forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
     };
 </script>
-
 </body>
 </html>
