@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AI DC 智慧美學全能大師 V31</title>
+    <title>AI DC 智慧美學全能大師 V32</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,32 +14,37 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding: 0; overflow-x: hidden; }
         .app-container { max-width: 500px; margin: auto; min-height: 100vh; background: white; position: relative; box-shadow: 0 0 30px rgba(0,0,0,0.05); }
         
-        /* 1. 拍攝與 AR 虛擬美妝鏡區域 */
-        .v-frame { width: 92%; margin: 25px auto; border-radius: 45px; overflow: hidden; border: 8px solid white; box-shadow: 0 15px 45px rgba(0,0,0,0.1); position: relative; background: #000; }
-        video { width: 100%; transform: scaleX(-1); display: block; border-radius: 35px; }
-        canvas.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-
-        /* 2. 數據導航與卡片 */
+        /* 頁面動畫 */
         .page { display: none; padding: 20px; animation: fadeIn 0.4s ease; box-sizing: border-box; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
 
+        /* 拍攝與 AR 區域 */
+        .v-frame { width: 92%; margin: 20px auto; border-radius: 45px; overflow: hidden; border: 8px solid white; box-shadow: 0 15px 45px rgba(0,0,0,0.1); position: relative; background: #000; }
+        video { width: 100%; transform: scaleX(-1); display: block; border-radius: 35px; }
+        canvas.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+        /* 導航分頁 */
         .nav-tabs { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; scrollbar-width: none; margin-bottom: 20px; }
-        .tab { flex: 0 0 auto; padding: 10px 22px; border-radius: 20px; background: var(--gray); border: none; font-size: 0.85em; font-weight: bold; color: #888; cursor: pointer; }
+        .tab { flex: 0 0 auto; padding: 10px 22px; border-radius: 20px; background: var(--gray); border: none; font-size: 0.85em; font-weight: bold; color: #888; cursor: pointer; transition: 0.3s; }
         .tab.active { background: var(--p); color: white; box-shadow: 0 5px 15px rgba(216, 180, 254, 0.4); }
 
+        /* 性別切換專用樣式 */
+        .gender-box { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
+        .gender-btn { width: 130px; padding: 12px; border-radius: 25px; border: 2px solid #eee; background: white; color: #aaa; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .gender-btn.active { border-color: var(--p); color: var(--p); background: var(--acc); }
+
         .card { background: white; border-radius: 30px; padding: 25px; margin-bottom: 20px; border: 1px solid #f0f0f0; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
-        .card h3 { font-size: 1.1em; color: var(--p); display: flex; align-items: center; gap: 10px; margin-top: 0; }
         
-        /* 比例數據尺 */
+        /* 比例數據尺 (FaceTag) */
         .m-bar { height: 6px; background: #eee; border-radius: 10px; position: relative; margin: 15px 0; }
         .m-ptr { position: absolute; top: -5px; width: 16px; height: 16px; background: var(--p); border: 3px solid white; border-radius: 50%; transform: translateX(-50%); transition: 0.8s; }
 
-        /* 色彩實體化 */
+        /* 色彩網格 */
         .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 15px 0; }
         .swatch { aspect-ratio: 1; border-radius: 12px; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
-        /* 風格動態地圖 */
+        /* 風格教學 SVG */
         .diag-svg { width: 100%; background: #fafafa; border-radius: 20px; margin: 15px 0; padding: 10px; box-sizing: border-box; }
         .step-txt { border-left: 3px solid var(--p); padding-left: 15px; margin: 12px 0; font-size: 0.9em; line-height: 1.6; color: #555; }
 
@@ -51,19 +56,26 @@
 <div class="app-container">
 
     <div id="p1" class="page active">
-        <div style="text-align: center; margin-top: 40px;">
+        <div style="text-align: center; margin-top: 30px;">
             <div style="color: var(--p); letter-spacing: 5px; font-size: 0.9em; font-weight: bold;">AESTHETIC AI FLAGSHIP</div>
             <h1 style="font-weight: 300; margin: 10px 0;">3D 臉部數據掃描</h1>
         </div>
+        
         <div class="v-frame">
             <video id="v" autoplay playsinline></video>
             <canvas id="mesh-canvas" class="overlay"></canvas>
         </div>
-        <button class="btn-main" onclick="runAI()">立即解碼美學報告</button>
+
+        <div class="gender-box">
+            <button id="btn-f" class="gender-btn active" onclick="setGender('f')"><i class="fa-solid fa-venus"></i> 女士美學</button>
+            <button id="btn-m" class="gender-btn" onclick="setGender('m')"><i class="fa-solid fa-mars"></i> 男士理容</button>
+        </div>
+
+        <button class="btn-main" onclick="runAI()">開始深度美學診斷</button>
     </div>
 
     <div id="p2" class="page">
-        <div style="text-align: center; margin-bottom: 25px;">
+        <div style="text-align: center; margin-bottom: 20px;">
             <div style="font-size: 2.5em; font-weight: bold; color: var(--p);">92</div>
             <h2 id="res-face">橢圓面 | 暖色調</h2>
             <div style="color: #bbb; font-size: 0.85em;">#2WG | #暖春型 | #比例均勻</div>
@@ -79,7 +91,7 @@
         <div id="mod-data" class="module">
             <div class="card">
                 <h3><i class="fa-solid fa-ruler-combined"></i> 三庭五眼數據偵測</h3>
-                <p style="font-size:0.8em; color:#888;">中庭長度比例 (標註數據)</p>
+                <p style="font-size:0.8em; color:#888;">中庭長度比例</p>
                 <div class="m-bar"><div class="m-ptr" style="left: 65%;"></div></div>
                 <p style="font-size:0.8em; color:#888; margin-top:20px;">眼間距數據 (五眼比)</p>
                 <div class="m-bar"><div class="m-ptr" style="left: 75%;"></div></div>
@@ -100,17 +112,14 @@
 
         <div id="mod-tut" class="module" style="display:none;">
             <div class="nav-tabs" style="background:none; border:none; padding:0;">
-                <button class="tab active" style="padding:8px 15px; font-size:0.7em;" onclick="setS('elegant')">氣質</button>
-                <button class="tab" style="padding:8px 15px; font-size:0.7em;" onclick="setS('kpop')">水光</button>
-                <button class="tab" style="padding:8px 15px; font-size:0.7em;" onclick="setS('western')">歐美</button>
-                <button class="tab" style="padding:8px 15px; font-size:0.7em;" onclick="setS('japanese')">甜美</button>
-                <button class="tab" style="padding:8px 15px; font-size:0.7em;" onclick="setS('cool')">個性</button>
-                <button class="tab" style="padding:8px 15px; font-size:0.7em;" onclick="setS('natural')">裸妝</button>
+                <button class="tab active" style="padding:8px 15px; font-size:0.75em;" onclick="setS('elegant')">氣質</button>
+                <button class="tab" style="padding:8px 15px; font-size:0.75em;" onclick="setS('kpop')">水光</button>
+                <button class="tab" style="padding:8px 15px; font-size:0.75em;" onclick="setS('western')">歐美</button>
             </div>
             <div class="card">
                 <h3 id="tut-title">精緻氣質妝教學</h3>
                 <div class="diag-svg">
-                    <svg id="svg-map" viewBox="0 0 100 65">
+                    <svg viewBox="0 0 100 65">
                         <ellipse cx="50" cy="30" rx="30" ry="25" fill="#fcf8ff" stroke="#eee" stroke-width="0.3"/>
                         <path id="path-brow" d="M 35 25 Q 45 15 55 25" stroke="#444" fill="none" stroke-width="2.5" stroke-linecap="round"/>
                         <path id="path-shadow" d="M 32 35 Q 42 25 52 35" fill="#d4a373" opacity="0.4"/>
@@ -123,7 +132,7 @@
 
         <div id="mod-skin" class="module" style="display:none;">
             <div class="card">
-                <h3><i class="fa-solid fa-virus"></i> 皮膚分析：肌齡與細膩度</h3>
+                <h3><i class="fa-solid fa-virus"></i> 皮膚分析</h3>
                 <div style="width: 220px; margin: auto;"><canvas id="skinChart"></canvas></div>
             </div>
         </div>
@@ -141,14 +150,10 @@
     const c = document.getElementById("mesh-canvas");
     const ctx = c.getContext("2d");
 
-    // 風格資料庫
     const STYLE_DATA = {
-        elegant: { title: "精緻氣質妝教學", brow: "M 35 25 Q 45 15 55 25", shadow: "#d4a373", txt: "畫出俐落挑眉，增加面部立體感與知性氣質。" },
-        kpop: { title: "韓系水光妝教學", brow: "M 35 25 Q 45 25 55 25", shadow: "#fbcfe8", txt: "平直眉毛，強調臥蠶提亮，打造通透感。" },
-        western: { title: "歐美立體妝教學", brow: "M 35 20 Q 45 5 55 20", shadow: "#a16207", txt: "挑高眉峰，強化眼窩深邃感，歐美修容重輪廓。" },
-        japanese: { title: "日系甜美妝教學", brow: "M 35 26 Q 45 22 55 28", shadow: "#ffc1cc", txt: "圓潤眉型，眼下腮紅橫掃，打造無辜感。" },
-        cool: { title: "酷感個性妝教學", brow: "M 35 22 Q 45 18 55 10", shadow: "#b39ddb", txt: "上揚貓眼線，極細挑眉，展現個性 Y2K 風。" },
-        natural: { title: "自然裸妝教學", brow: "M 35 25 Q 45 26 55 25", shadow: "#fdf2f4", txt: "原生毛流眉，局部遮瑕，強調清透偽素顏。" }
+        elegant: { title: "精緻氣質妝教學", brow: "M 35 25 Q 45 15 55 25", shadow: "#d4a373", txt: "畫出俐落挑眉，增加面部稜角。" },
+        kpop: { title: "韓系水光妝教學", brow: "M 35 25 Q 45 25 55 25", shadow: "#fbcfe8", txt: "平直眉毛，強調臥蠶提亮。" },
+        western: { title: "歐美立體妝教學", brow: "M 35 20 Q 45 5 55 20", shadow: "#a16207", txt: "挑高眉峰，強化深邃輪廓。" }
     };
 
     async function init() {
@@ -163,7 +168,7 @@
     }
     init();
 
-    // --- 強化版：478 點位微光面網繪製 ---
+    // 478 點位微光網格繪製
     async function loop() {
         c.width = v.videoWidth; c.height = v.videoHeight;
         const res = await faceL.detectForVideo(v, performance.now());
@@ -172,20 +177,15 @@
         if (res.faceLandmarks && res.faceLandmarks[0]) {
             const points = res.faceLandmarks[0];
             ctx.fillStyle = "#d8b4fe";
-            ctx.shadowColor = "#d8b4fe";
-            ctx.shadowBlur = 10; // 發光光暈
+            ctx.shadowColor = "#d8b4fe"; ctx.shadowBlur = 12; // 加強發光
             
-            // 繪製點位 (抽樣增加科技感)
             points.forEach((p, i) => {
                 if(i % 2 === 0) {
-                    ctx.beginPath(); ctx.arc(p.x * c.width, p.y * c.height, 1.8, 0, 2 * Math.PI); ctx.fill();
+                    ctx.beginPath(); ctx.arc(p.x * c.width, p.y * c.height, 2, 0, 2 * Math.PI); ctx.fill();
                 }
             });
 
-            // 繪製極細面網連線 (Grid)
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = "rgba(216, 180, 254, 0.15)";
-            ctx.lineWidth = 0.5;
+            ctx.shadowBlur = 0; ctx.strokeStyle = "rgba(216, 180, 254, 0.2)";
             for (let i = 0; i < points.length; i+=15) {
                 if(points[i+1]) {
                     ctx.beginPath(); ctx.moveTo(points[i].x * c.width, points[i].y * c.height);
@@ -195,6 +195,12 @@
         }
         requestAnimationFrame(loop);
     }
+
+    window.setGender = (g) => {
+        document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(g==='f'?'btn-f':'btn-m').classList.add('active');
+        document.documentElement.style.setProperty('--p', g==='m' ? '#818cf8' : '#d8b4fe');
+    };
 
     window.runAI = () => {
         document.getElementById("p1").classList.remove("active");
@@ -207,8 +213,8 @@
         new Chart(ctxS, {
             type: 'radar',
             data: {
-                labels: ['健康度', '細膩度', '勻淨度', '耐受性', '控油性'],
-                datasets: [{ data: [7, 9, 6, 8, 8], backgroundColor: 'rgba(216,180,254,0.4)', borderColor: '#d8b4fe' }]
+                labels: ['健康度', '細膩度', '勻淨度', '耐受性', '年輕度'],
+                datasets: [{ data: [7, 9, 6, 8, 9], backgroundColor: 'rgba(216,180,254,0.4)', borderColor: '#d8b4fe' }]
             },
             options: { plugins: { legend: { display: false } } }
         });
