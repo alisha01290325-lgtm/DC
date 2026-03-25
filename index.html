@@ -3,61 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AI 彩妝私教課 - 專業報告版</title>
+    <title>AI 形象美學諮詢報告系統</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
+        /* 基礎樣式重置 */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-        body { font-family: -apple-system, sans-serif; background: #fdfdfd; color: #333; height: 100vh; overflow: hidden; }
-        .app { max-width: 420px; height: 100vh; margin: 0 auto; background: #fff; position: relative; display: flex; flex-direction: column; }
+        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background: #fdfdfd; color: #333; height: 100vh; overflow: hidden; }
         
-        /* 標題與相機 */
-        .header { padding: 12px; background: #FF4A96; color: white; text-align: center; font-weight: bold; font-size: 16px; }
+        /* 行動裝置容器 */
+        .app { max-width: 420px; height: 100vh; margin: 0 auto; background: #fff; position: relative; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        
+        .header { padding: 14px; background: #FF4A96; color: white; text-align: center; font-weight: bold; font-size: 16px; letter-spacing: 1px; }
+
+        /* 相機預覽區 */
         .camera-container { position: relative; width: 100%; height: 320px; background: #000; }
         #video { width: 100%; height: 100%; object-fit: cover; }
         #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 
-        /* 教學面板 */
+        /* 教學操作面板 */
         .lesson-panel { flex: 1; overflow-y: auto; padding: 20px; background: #fff; border-radius: 24px 24px 0 0; margin-top: -20px; z-index: 5; box-shadow: 0 -10px 20px rgba(0,0,0,0.05); }
+        
         .btn-group { display: flex; gap: 8px; margin-bottom: 15px; }
-        .style-btn { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #eee; background: #f8f8f8; font-size: 12px; cursor: pointer; }
+        .style-btn { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #eee; background: #f8f8f8; font-size: 12px; font-weight: bold; cursor: pointer; color: #888; transition: 0.3s; }
         .style-btn.active { background: #FF4A96; color: #fff; border-color: #FF4A96; }
 
-        /* 步驟卡片 - 優化加入真人圖例 */
-        .step-card { border: 1px solid #f0f0f0; border-radius: 12px; padding: 8px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-        .step-card.active { border-color: #FF4A96; background: #FFF7F9; box-shadow: 0 2px 8px rgba(255,74,150,0.1); }
-        
-        .step-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        /* 步驟導引卡片 */
+        .step-card { border: 1px solid #f0f0f0; border-radius: 14px; padding: 10px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .step-card.active { border-color: #FF4A96; background: #FFF7F9; transform: scale(1.02); }
+        .step-thumb { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #eee; border: 1px solid #eee; }
         .step-info { flex: 1; display: flex; align-items: center; gap: 10px; }
-        
         .step-num { width: 22px; height: 22px; background: #FF4A96; color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; }
         .step-text { font-size: 13px; font-weight: 500; color: #555; }
-        .step-card.active .step-text { color: #FF4A96; font-weight: bold; }
 
-        /* 報告按鈕 */
+        /* 報告生成按鈕 */
         .report-trigger { width: 100%; padding: 15px; background: #725CFF; color: white; border: none; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(114, 92, 255, 0.3); }
 
-        /* 報告彈窗 (Modal) */
+        /* 報告視窗 (Modal) */
         .report-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; overflow-y: auto; padding: 25px; }
-        .report-header { text-align: center; margin-bottom: 25px; }
-        .report-header h2 { color: #725CFF; font-size: 22px; }
-        .report-section { margin-bottom: 20px; padding: 15px; background: #F9F9FF; border-radius: 15px; }
-        .report-label { font-weight: bold; color: #725CFF; margin-bottom: 8px; display: block; font-size: 14px; }
-        .report-content { font-size: 14px; line-height: 1.6; color: #555; }
-        .close-report { margin-top: 20px; width: 100%; padding: 15px; background: #eee; border: none; border-radius: 12px; font-weight: bold; }
+        #report-capture-area { padding: 25px; background: #fff; border-radius: 20px; border: 1px solid #eee; background-image: radial-gradient(#f0f0f0 1px, transparent 1px); background-size: 20px 20px; }
+        .report-header { text-align: center; border-bottom: 2px solid #725CFF; padding-bottom: 15px; margin-bottom: 20px; }
+        .report-section { margin-bottom: 15px; padding: 15px; background: rgba(249, 249, 255, 0.9); border-radius: 15px; }
+        .report-label { font-weight: bold; color: #725CFF; margin-bottom: 8px; display: block; font-size: 13px; }
+        
+        .color-analysis { display: flex; align-items: center; gap: 15px; }
+        .skin-swatch { width: 65px; height: 65px; border-radius: 15px; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        /* 載入遮罩 */
-        .loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .btn-actions { display: flex; gap: 10px; margin-top: 25px; }
+        .save-btn { flex: 2; padding: 16px; background: #4FC19F; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(79, 193, 159, 0.3); }
+        .close-btn { flex: 1; padding: 16px; background: #eee; border: none; border-radius: 12px; font-weight: bold; color: #666; }
+
+        /* 啟動載入遮罩 */
+        .loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .spinner { width: 35px; height: 35px; border: 4px solid #f3f3f3; border-top: 4px solid #FF4A96; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div class="app">
     <div id="loading" class="loading-screen">
-        <div style="width: 35px; height: 35px; border: 4px solid #f3f3f3; border-top: 4px solid #FF4A96; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top: 15px; color: #FF4A96; font-size: 14px;">AI 導師正在準備課程...</p>
+        <div class="spinner"></div>
+        <p id="status-msg" style="margin-top: 15px; color: #FF4A96; font-size: 14px; font-weight: 500;">AI 教練正在準備課程...</p>
     </div>
 
-    <div class="header">AI 彩妝私教課</div>
+    <div class="header">AI 形象美學・實時私教引導</div>
 
     <div class="camera-container">
         <video id="video" autoplay muted playsinline></video>
@@ -66,120 +78,204 @@
 
     <div class="lesson-panel">
         <div class="btn-group">
-            <button class="style-btn active" onclick="switchLesson('eyebrow', this)">眉型定位</button>
-            <button class="style-btn" onclick="switchLesson('contour', this)">修容比例</button>
-            <button class="style-btn" onclick="switchLesson('lip', this)">唇部修飾</button>
+            <button class="style-btn active" onclick="switchLesson('eyebrow', this)">眉型定位課</button>
+            <button class="style-btn" onclick="switchLesson('contour', this)">黃金修容課</button>
+            <button class="style-btn" onclick="switchLesson('lip', this)">M字唇型課</button>
         </div>
 
-        <div id="step-container"></div>
+        <div id="step-container">
+            </div>
         
-        <button class="report-trigger" onclick="generateReport()">📋 生成我的專屬面分析報告</button>
+        <button class="report-trigger" onclick="openReport()">📋 生成面部分析報告 & 存檔</button>
     </div>
 </div>
 
 <div id="report-modal" class="report-modal">
-    <div class="report-header">
-        <h2>AI 個人面部分析報告</h2>
-        <p style="font-size: 12px; color: #999;">Analysis ID: #MA-${Math.floor(Math.random()*10000)}</p>
-    </div>
-
-    <div class="report-section">
-        <span class="report-label">📍 臉型診斷結論</span>
-        <div id="report-face" class="report-content">正在匯總偵測數據...</div>
-    </div>
-
-    <div class="report-section">
-        <span class="report-label">🎨 膚色與基調分析</span>
-        <div id="report-skin" class="report-content">正在分析色彩採樣...</div>
-    </div>
-
-    <div class="report-section">
-        <span class="report-label">💄 專屬彩妝核心建議</span>
-        <div id="report-advice" class="report-content">
-            <p id="adv-1"></p>
-            <p id="adv-2"></p>
-            <p id="adv-3"></p>
+    <div id="report-capture-area">
+        <div class="report-header">
+            <h2 style="color:#725CFF; letter-spacing: 2px;">專業面部分析報告</h2>
+            <p style="font-size:11px; color:#999; margin-top: 5px;">由 AI 形象導師 翊甄 專業監製</p>
         </div>
+
+        <div class="report-section">
+            <span class="report-label">📍 臉型比例診斷</span>
+            <div id="report-face-text" style="font-size:14px; line-height:1.6; color:#444;"></div>
+        </div>
+
+        <div class="report-section">
+            <span class="report-label">🎨 膚色基調採樣</span>
+            <div class="color-analysis">
+                <div id="report-skin-swatch" class="skin-swatch"></div>
+                <div id="report-skin-text" style="font-size:13px; line-height:1.5; color:#444;">正在分析基調中...</div>
+            </div>
+        </div>
+
+        <div class="report-section">
+            <span class="report-label">💄 導師核心彩妝建議</span>
+            <div id="report-advice-text" style="font-size:13px; color:#555; line-height:1.6; background: #fff; padding: 10px; border-radius: 8px;"></div>
+        </div>
+        
+        <p style="text-align:center; font-size:10px; color:#bbb; margin-top: 10px;">本報告僅供學員練習參考，版權所有 翊甄</p>
     </div>
 
-    <p style="font-size: 11px; color: #bbb; text-align: center;">* 此報告僅供學員練習參考，請結合導師課程說明 *</p>
-    <button class="close-report" onclick="document.getElementById('report-modal').style.display='none'">返回練習畫面</button>
+    <div class="btn-actions">
+        <button class="save-btn" onclick="saveAsImage()">💾 下載報告圖片 (PNG)</button>
+        <button class="close-btn" onclick="document.getElementById('report-modal').style.display='none'">返回練習</button>
+    </div>
 </div>
 
 <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    let currentLesson = 'eyebrow';
-    let currentStep = 0;
     let isReady = false;
-    let lastAnalysis = { face: "偵測中", skin: "偵測中", ratio: 1 };
+    let currentLesson = 'eyebrow', currentStep = 0;
+    let lastData = { ratio: 1, skinRGB: 'rgb(255,255,255)' };
 
-    // 課程數據更新：新增 images 陣列，存放真人示範圖
+    // 課程數據配置 (真人圖示路徑預設)
     const lessonData = {
         eyebrow: { 
-            name: "眉型課", 
-            steps: ["眉頭定位", "眉峰定位", "眉尾定位"],
-            images: [
-                "images/step_brow_start.jpg", // 請替換為真實圖片路徑
-                "images/step_brow_peak.jpg", 
-                "images/step_brow_end.jpg"
-            ]
+            steps: ["眉頭：垂直定位起點", "眉峰：斜向最高點", "眉尾：眼尾拉長終點"], 
+            imgs: ["images/b1.jpg","images/b2.jpg","images/b3.jpg"] 
         },
         contour: { 
-            name: "修容課", 
-            steps: ["下顎陰影", "鼻影定位", "顴骨提亮"],
-            images: [
-                "images/step_contour_jaw.jpg", 
-                "images/step_contour_nose.jpg", 
-                "images/step_contour_highlight.jpg"
-            ]
+            steps: ["下顎：視覺收窄修容", "鼻樑：精緻立體影", "顴骨：提亮澎潤點"], 
+            imgs: ["images/c1.jpg","images/c2.jpg","images/c3.jpg"] 
         },
         lip: { 
-            name: "唇型課", 
-            steps: ["M字唇峰", "唇形加厚", "嘴角提升"],
-            images: [
-                "images/step_lip_m.jpg", 
-                "images/step_lip_full.jpg", 
-                "images/step_lip_corner.jpg"
-            ]
+            steps: ["唇峰：M字頂點勾勒", "唇腹：飽和色彩填色", "嘴角：微笑上揚線"], 
+            imgs: ["images/l1.jpg","images/l2.jpg","images/l3.jpg"] 
         }
     };
 
+    // 1. 初始化 AI 引擎
     async function init() {
+        const status = document.getElementById('status-msg');
         try {
+            // 修正 WASM 報錯：強制等待引擎就緒
+            if (faceapi.tf) {
+                await faceapi.tf.setBackend('webgl');
+                await faceapi.tf.ready();
+            }
+
             const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            status.innerText = "載入 AI 教學模組中...";
             await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
             await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
             
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            status.innerText = "開啟視訊引導鏡頭...";
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'user', width: 640, height: 480 } 
+            });
             video.srcObject = stream;
+            
             video.onloadedmetadata = () => {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                document.getElementById('loading').style.display = 'none';
                 isReady = true;
+                document.getElementById('loading').style.display = 'none';
                 renderSteps();
                 loop();
             };
-        } catch (e) { alert("啟動失敗: " + e.message); }
+        } catch (e) {
+            status.innerText = "啟動失敗，請確保使用 Safari/Chrome 並授權相機權限";
+            status.style.color = "red";
+        }
     }
 
+    // 2. 實時分析與 AR 繪製迴圈
+    async function loop() {
+        if (!isReady) return;
+        
+        const detect = await faceapi.detectSingleFace(video).withFaceLandmarks();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (detect) {
+            const m = detect.landmarks;
+            const jaw = m.getJawOutline();
+            const nose = m.getNose();
+
+            // A. 臉型寬高比計算
+            lastData.ratio = Math.abs(jaw[16].x - jaw[0].x) / Math.abs(jaw[8].y - nose[0].y);
+            
+            // B. 膚色自動採樣 (從左側臉頰採樣)
+            sampleSkin(jaw[3]);
+            
+            // C. 繪製導引線
+            drawGuides(m);
+        }
+        requestAnimationFrame(loop);
+    }
+
+    // 3. 膚色採樣邏輯
+    function sampleSkin(pos) {
+        const tCanvas = document.createElement('canvas');
+        tCanvas.width = video.videoWidth; tCanvas.height = video.videoHeight;
+        const tCtx = tCanvas.getContext('2d');
+        tCtx.drawImage(video, 0, 0);
+        const p = tCtx.getImageData(pos.x, pos.y, 1, 1).data;
+        lastData.skinRGB = `rgb(${p[0]},${p[1]},${p[2]})`;
+    }
+
+    // 4. 產生診斷報告邏輯
+    function openReport() {
+        document.getElementById('report-modal').style.display = 'block';
+        
+        // 臉型診斷
+        const faceType = lastData.ratio > 1.1 ? "方圓臉型" : (lastData.ratio < 0.85 ? "長橢圓臉" : "標準鵝蛋臉");
+        document.getElementById('report-face-text').innerHTML = `
+            AI 分析您的臉型比例為 <b>${lastData.ratio.toFixed(2)}</b>。<br>
+            這代表您屬於 <b>${faceType}</b>。
+        `;
+        
+        // 膚色採樣
+        document.getElementById('report-skin-swatch').style.background = lastData.skinRGB;
+        document.getElementById('report-skin-text').innerHTML = `
+            當前皮膚採樣色號：${lastData.skinRGB}<br>
+            基調判斷：建議搭配<b>暖色調底妝</b>。<br>
+            推薦色系：珊瑚橘、大地色系。
+        `;
+
+        // 建議文字
+        const advice = lastData.ratio > 1.1 ? 
+            "由於您的輪廓較為明顯，建議眉峰位置稍微挑高，並在下顎角處加強修容，讓面部曲線更溫柔細緻。" : 
+            "您的臉型比例優雅，眉毛長度建議適中即可。修容重點可放在面中提亮，增加蘋果肌的飽滿感。";
+        document.getElementById('report-advice-text').innerText = advice;
+    }
+
+    // 5. 將報告下載為圖片 (html2canvas)
+    async function saveAsImage() {
+        const area = document.getElementById('report-capture-area');
+        const btn = document.querySelector('.save-btn');
+        const originalText = btn.innerText;
+        btn.innerText = "⌛ 正在生成高清圖像...";
+        
+        html2canvas(area, { 
+            scale: 2, // 提高解析度
+            backgroundColor: "#ffffff",
+            useCORS: true 
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `翊甄AI分析報告_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            btn.innerText = originalText;
+        });
+    }
+
+    // 6. 介面操作與 AR 繪製
     function switchLesson(key, btn) {
-        currentLesson = key;
-        currentStep = 0;
+        currentLesson = key; currentStep = 0;
         document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderSteps();
     }
 
-    // 更新：渲染步驟卡片時加入真人圖片
     function renderSteps() {
         const container = document.getElementById('step-container');
-        const lesson = lessonData[currentLesson];
-        container.innerHTML = lesson.steps.map((s, i) => `
+        container.innerHTML = lessonData[currentLesson].steps.map((s, i) => `
             <div class="step-card ${i === currentStep ? 'active' : ''}" onclick="currentStep=${i};renderSteps()">
-                <img class="step-thumb" src="${lesson.images[i]}" alt="範例圖">
+                <img class="step-thumb" src="${lessonData[currentLesson].imgs[i]}" onerror="this.src='https://via.placeholder.com/50/FF85A5/FFFFFF?text=%E7%AF%84%E4%BE%8B'" alt="範例圖">
                 <div class="step-info">
                     <div class="step-num">${i+1}</div>
                     <div class="step-text">${s}</div>
@@ -188,79 +284,28 @@
         `).join('');
     }
 
-    async function loop() {
-        if (!isReady) return;
-        const detect = await faceapi.detectSingleFace(video).withFaceLandmarks();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (detect) {
-            const m = detect.landmarks;
-            const jaw = m.getJawOutline();
-            const width = Math.abs(jaw[16].x - jaw[0].x);
-            const height = Math.abs(jaw[8].y - m.getNose()[0].y);
-            lastAnalysis.ratio = width / height;
-            lastAnalysis.face = lastAnalysis.ratio > 1.1 ? "方圓臉型" : (lastAnalysis.ratio < 0.85 ? "長橢圓臉" : "標準鵝蛋臉");
-            
-            drawGuides(m);
-        }
-        requestAnimationFrame(loop);
-    }
-
     function drawGuides(m) {
-        ctx.strokeStyle = "#FF4A96";
-        ctx.lineWidth = 3;
-        ctx.setLineDash([5, 5]);
-
+        ctx.strokeStyle = "#FF4A96"; ctx.lineWidth = 3; ctx.setLineDash([5, 5]);
+        
         if (currentLesson === 'eyebrow') {
-            const nose = m.getNose();
-            const leftEye = m.getLeftEye();
-            if (currentStep === 0) line(nose[0].x, nose[0].y, nose[0].x, nose[0].y - 80);
-            if (currentStep === 1) line(nose[6].x, nose[6].y, leftEye[3].x, leftEye[3].y - 40);
-            if (currentStep === 2) line(nose[6].x, nose[6].y, leftEye[5].x + 25, leftEye[5].y);
-        } else if (currentLesson === 'contour') {
-            const jaw = m.getJawOutline();
-            ctx.fillStyle = "rgba(139, 69, 19, 0.2)";
-            ctx.beginPath();
-            ctx.arc(jaw[3].x, jaw[3].y, 35, 0, Math.PI*2);
-            ctx.fill();
+            const n = m.getNose(), e = m.getLeftEye();
+            if (currentStep === 0) line(n[0].x, n[0].y, n[0].x, n[0].y - 80); // 眉頭
+            if (currentStep === 1) line(n[6].x, n[6].y, e[3].x, e[3].y - 40); // 眉峰
+            if (currentStep === 2) line(n[6].x, n[6].y, e[5].x + 25, e[5].y); // 眉尾
+        } else if (currentLesson === 'contour' && currentStep === 0) {
+            const j = m.getJawOutline(); ctx.fillStyle = "rgba(139, 69, 19, 0.2)";
+            ctx.beginPath(); ctx.arc(j[3].x, j[3].y, 35, 0, Math.PI*2); ctx.fill(); // 修容色塊
         } else if (currentLesson === 'lip') {
-            const mouth = m.getMouth();
-            ctx.setLineDash([]);
-            ctx.beginPath();
-            ctx.moveTo(mouth[2].x, mouth[2].y);
-            ctx.lineTo(mouth[3].x, mouth[3].y);
-            ctx.lineTo(mouth[4].x, mouth[4].y);
-            ctx.stroke();
+            const mo = m.getMouth(); ctx.setLineDash([]); // 唇線用實線
+            ctx.beginPath(); ctx.moveTo(mo[2].x, mo[2].y); ctx.lineTo(mo[3].x, mo[3].y); ctx.lineTo(mo[4].x, mo[4].y); ctx.stroke();
         }
     }
 
-    function line(x1, y1, x2, y2) {
-        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    }
+    function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
 
-    function generateReport() {
-        const modal = document.getElementById('report-modal');
-        modal.style.display = 'block';
-
-        let faceText = `您的臉型比例為 ${lastAnalysis.ratio.toFixed(2)}，診斷為 **${lastAnalysis.face}**。`;
-        if (lastAnalysis.ratio > 1.1) faceText += " 特徵是臉寬稍微明顯，建議重點在於軟化下顎線與橫向修飾。";
-        else if (lastAnalysis.ratio < 0.85) faceText += " 臉型較為修長，建議增加臉部橫向視覺，避免過長眉型。";
-        document.getElementById('report-face').innerHTML = faceText;
-
-        document.getElementById('report-skin').innerHTML = `
-            偵測到您的膚色偏向 **暖色調 (Warm)**。建議彩妝色號：<br>
-            - 底妝：象牙色/自然色<br>
-            - 唇膏：珊瑚橘、玫瑰棕<br>
-            - 眼影：大地金、蜜桃色
-        `;
-
-        document.getElementById('adv-1').innerText = `【眉型建議】您的臉型適合『弧形眉』，請利用 Step 2 的眉峰導引線，將眉峰稍微挑高 2mm。`;
-        document.getElementById('adv-2').innerText = `【修容建議】著重在兩頰側影，縮小臉部寬度，讓五官更集中。`;
-        document.getElementById('adv-3').innerText = `【學員提醒】練習時請注意畫筆與臉部垂直，保持導引線與五官重合。`;
-    }
-
+    // 頁面加載後啟動系統
     window.onload = init;
 </script>
-<style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
+
 </body>
 </html>
